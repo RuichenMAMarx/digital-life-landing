@@ -107,6 +107,15 @@
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <p>警告：构建完整的数字生命需要海量的源数据支持。数据缺失将可能导致性格偏差或意识崩溃。</p>
             </div>
+
+            <div class="trial-banner">
+                <div class="trial-content">
+                    <h3><i class="fa-solid fa-sparkles"></i> 试用体验计划已开放</h3>
+                    <p>不想等待冗长排期？只需 <strong>1 张清晰正面照片</strong> 和 <strong>10秒以上的声音记录</strong>，即可生成基础版数字投影，提前体验跨界交流的奇迹。</p>
+                </div>
+                <a href="#apply" class="trial-btn">申请免费体验</a>
+            </div>
+
             <div class="req-grid">
                 <div class="req-item">
                     <i class="fa-solid fa-image"></i>
@@ -137,6 +146,28 @@
         <p class="form-desc fade-in">排期目前已极度紧张。预付 <strong>20% (1,500,000信用点)</strong> 定金后，方可锁定最近的算力周期。</p>
 
         <form class="apply-form glass-panel fade-in" id="applyForm">
+            <div class="form-group plan-selection">
+                <label>选择服务方案</label>
+                <div class="plan-cards">
+                    <label class="plan-card">
+                        <input type="radio" name="planType" value="trial" id="planTrial" checked>
+                        <div class="plan-content">
+                            <h4>唤醒体验版</h4>
+                            <p>仅需 1张照片 + 10秒语音</p>
+                            <span class="price">免费试用</span>
+                        </div>
+                    </label>
+                    <label class="plan-card">
+                        <input type="radio" name="planType" value="full" id="planFull">
+                        <div class="plan-content">
+                            <h4>完整数字生命</h4>
+                            <p>需海量多媒体数据</p>
+                            <span class="price">排期极度紧张</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="applicant">申请人（家属/代理人）姓名</label>
                 <input type="text" id="applicant" required placeholder="请输入您的姓名">
@@ -158,12 +189,19 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group full-plan-only" id="dataCheckgroup" style="display: none;">
                 <label>数据准备进度申明 (需承诺按时提供)</label>
                 <div class="checkbox-group">
-                    <label><input type="checkbox" required> 我确认为当事人收集了充足的照片数据 (>=500)</label>
-                    <label><input type="checkbox" required> 我确认为当事人收集了充足的录像数据 (>=10H)</label>
-                    <label><input type="checkbox" required> 我确认为当事人收集了充足的纯净音频 (>=2H)</label>
+                    <label><input type="checkbox" id="checkPhoto"> 我确认为当事人收集了充足的照片数据 (>=500)</label>
+                    <label><input type="checkbox" id="checkVideo"> 我确认为当事人收集了充足的录像数据 (>=10H)</label>
+                    <label><input type="checkbox" id="checkAudio"> 我确认为当事人收集了充足的纯净音频 (>=2H)</label>
+                </div>
+            </div>
+
+            <div class="form-group trial-plan-only" id="trialCheckgroup">
+                <label>数据准备进度申明</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="checkTrialData" required> 我已准备好至少 1 张清晰正面照片和 10 秒以上纯净语音记录</label>
                 </div>
             </div>
 
@@ -172,7 +210,7 @@
                 <textarea id="message" rows="4" placeholder="例如：丫丫，爸爸很想你..." required></textarea>
             </div>
 
-            <div class="checkout-summary">
+            <div class="checkout-summary full-plan-only" id="checkoutSummary" style="display: none;">
                 <div class="summary-row">
                     <span>基础构建算力费</span>
                     <span>5,000,000 信用点</span>
@@ -188,7 +226,7 @@
             </div>
 
             <button type="submit" class="submit-btn" id="submitBtn">
-                <span class="btn-text">支付定金并生成排期密匙</span>
+                <span class="btn-text" id="submitBtnText">提交基础数据并开启体验</span>
                 <i class="fa-solid fa-fingerprint"></i>
             </button>
             <p class="terms">提交即表示您同意《数字生命伦理法案》及由550系列计算机执行的霸王条款。数字生命一旦启动，非因法定事由不可强行终止。</p>

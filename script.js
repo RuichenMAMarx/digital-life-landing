@@ -112,8 +112,50 @@ document.querySelectorAll('.fade-in').forEach(el => observers.observe(el));
 const applyForm = document.getElementById('applyForm');
 const modal = document.getElementById('successModal');
 const submitBtn = document.getElementById('submitBtn');
+const submitBtnText = document.getElementById('submitBtnText');
 const seqNumber = document.getElementById('sequenceNumber');
 const stripePayBtn = document.getElementById('stripePayBtn');
+
+const planRadios = document.querySelectorAll('input[name="planType"]');
+const trialCheckgroup = document.getElementById('trialCheckgroup');
+const dataCheckgroup = document.getElementById('dataCheckgroup');
+const checkoutSummary = document.getElementById('checkoutSummary');
+const checkPhoto = document.getElementById('checkPhoto');
+const checkVideo = document.getElementById('checkVideo');
+const checkAudio = document.getElementById('checkAudio');
+const checkTrialData = document.getElementById('checkTrialData');
+const modalTitle = modal.querySelector('h2');
+const modalDesc = modal.querySelector('.modal-desc');
+
+let currentPlan = 'trial';
+
+// Handle plan change
+planRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        currentPlan = e.target.value;
+        if (currentPlan === 'full') {
+            dataCheckgroup.style.display = 'block';
+            checkoutSummary.style.display = 'block';
+            trialCheckgroup.style.display = 'none';
+            submitBtnText.textContent = '支付定金并生成排期密匙';
+
+            checkPhoto.required = true;
+            checkVideo.required = true;
+            checkAudio.required = true;
+            checkTrialData.required = false;
+        } else {
+            dataCheckgroup.style.display = 'none';
+            checkoutSummary.style.display = 'none';
+            trialCheckgroup.style.display = 'block';
+            submitBtnText.textContent = '提交基础数据并开启体验';
+
+            checkPhoto.required = false;
+            checkVideo.required = false;
+            checkAudio.required = false;
+            checkTrialData.required = true;
+        }
+    });
+});
 
 // TODO: 将这里的 URL 替换为您在 Stripe Dashboard 中创建的 Payment Link (Payment Links > Create)
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/test_YOUR_LINK_HERE";
@@ -122,7 +164,7 @@ applyForm.addEventListener('submit', (e) => {
     e.preventDefault();
 
     // Animate button
-    const originalText = submitBtn.innerHTML;
+    const originalText = submitBtnText.textContent;
     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在连接量子计算机...';
     submitBtn.style.opacity = '0.8';
     submitBtn.disabled = true;
@@ -132,6 +174,16 @@ applyForm.addEventListener('submit', (e) => {
         // Generate random sequence
         const rand = Math.floor(10000 + Math.random() * 90000);
         seqNumber.textContent = `DL-2058-${rand}`;
+
+        if (currentPlan === 'full') {
+            modalTitle.textContent = '授权申请已收录';
+            modalDesc.innerHTML = '请完成定金支付以正式锁定 550W 算力周期。<br>当前算力预估需要等待：<span class="highlight">1.4 年</span><br><br><small style="color: rgba(255,255,255,0.5);"><i class="fa-solid fa-lock"></i> 支付由 Stripe 提供企业级安全加密保障</small>';
+            stripePayBtn.style.display = 'inline-flex';
+        } else {
+            modalTitle.textContent = '体验资料上传通道已开启';
+            modalDesc.innerHTML = '您的试用档案已建立。请后续上传您的 1 张照片和 10 秒以上语音记录。<br>审核通过后约 <span class="highlight">15 分钟</span> 即可生成您的专属数字生命对话链接。';
+            stripePayBtn.style.display = 'none';
+        }
 
         // Show Modal
         modal.classList.add('active');
@@ -149,10 +201,20 @@ applyForm.addEventListener('submit', (e) => {
         }
 
         // Reset form btn
-        submitBtn.innerHTML = originalText;
+        submitBtn.innerHTML = `<span class="btn-text" id="submitBtnText">${originalText}</span><i class="fa-solid fa-fingerprint"></i>`;
         submitBtn.style.opacity = '1';
         submitBtn.disabled = false;
         applyForm.reset();
+
+        // Reset to default plan state
+        currentPlan = 'trial';
+        dataCheckgroup.style.display = 'none';
+        checkoutSummary.style.display = 'none';
+        trialCheckgroup.style.display = 'block';
+        checkPhoto.required = false;
+        checkVideo.required = false;
+        checkAudio.required = false;
+        checkTrialData.required = true;
     }, 2000);
 });
 
