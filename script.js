@@ -255,7 +255,7 @@ applyForm.addEventListener('submit', (e) => {
             stripePaymentForm.style.display = 'none';
 
             // Generate IM Deep Link Button (e.g., Telegram)
-            const telegramBotUsername = 'your_bot_username_here'; // Replace with actual bot username
+            const telegramBotUsername = 'splandour_550w_bot'; // Replace with actual bot username
             const deepLinkUrl = `https://t.me/${telegramBotUsername}?start=${uid}`;
 
             // Check if button already exists, if not create it

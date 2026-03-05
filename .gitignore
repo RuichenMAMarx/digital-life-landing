@@ -1,0 +1,9 @@
+# Node.js dependencies
+bot/node_modules/
+bot/npm-debug.log*
+
+# Environment variables (NEVER COMMIT THIS)
+bot/.env
+
+# MacOS system files
+.DS_Store
