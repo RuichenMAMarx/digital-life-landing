@@ -19,6 +19,10 @@ const PREFERRED_CHANNEL_KINDS = String(process.env.PREFERRED_CHANNEL_KINDS || 't
   .filter(Boolean);
 const RUNTIME_POLL_INTERVAL_MS = Number(process.env.RUNTIME_POLL_INTERVAL_MS || 6000);
 const RUNTIME_POLL_MAX_ATTEMPTS = Number(process.env.RUNTIME_POLL_MAX_ATTEMPTS || 25);
+const ENABLE_TYPING_DELAY = String(process.env.ENABLE_TYPING_DELAY || 'true').trim().toLowerCase() !== 'false';
+const TYPING_CPS = Math.max(1, Number(process.env.TYPING_CPS || 6));
+const TYPING_MIN_DELAY_MS = Math.max(0, Number(process.env.TYPING_MIN_DELAY_MS || 1200));
+const TYPING_MAX_DELAY_MS = Math.max(TYPING_MIN_DELAY_MS, Number(process.env.TYPING_MAX_DELAY_MS || 7000));
 const DATA_DIR = path.resolve(process.env.BOT_DATA_DIR || path.join(__dirname, 'data'));
 const ASSET_DIR = path.join(DATA_DIR, 'assets');
 const SESSION_FILE = path.join(DATA_DIR, 'sessions.json');
@@ -55,7 +59,8 @@ function ensureSessionShape(session) {
       allocation: session?.handoff?.allocation || null,
       runtime: session?.handoff?.runtime || null
     },
-    messagesCount: Number(session.messagesCount || 0)
+    messagesCount: Number(session.messagesCount || 0),
+    botReplyCount: Number(session.botReplyCount || 0)
   };
 }
 
@@ -123,7 +128,8 @@ function bindUid(chatId, uid) {
       runtime: null
     },
     assets: { photos: [], audio: [] },
-    messagesCount: 0
+    messagesCount: 0,
+    botReplyCount: 0
   });
 }
 
@@ -271,6 +277,27 @@ function handoffProvisioningText(runtime) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function estimateTypingDelayMs(text, options = {}) {
+  if (!ENABLE_TYPING_DELAY || options.skipDelay) return 0;
+  const chars = String(text || '').trim().length;
+  if (!chars) return 0;
+  const rawMs = Math.ceil((chars / TYPING_CPS) * 1000);
+  return Math.max(TYPING_MIN_DELAY_MS, Math.min(TYPING_MAX_DELAY_MS, rawMs));
+}
+
+async function sendMessageWithTyping(chatId, text, options = {}) {
+  const delayMs = estimateTypingDelayMs(text, options);
+  if (delayMs > 0) {
+    try {
+      await bot.sendChatAction(chatId, 'typing');
+    } catch (err) {
+      console.warn('sendChatAction failed:', String(err.message || err));
+    }
+    await sleep(delayMs);
+  }
+  return bot.sendMessage(chatId, text, options.messageOptions || undefined);
 }
 
 async function fetchControlPlaneSessionStatus(uid) {
@@ -625,8 +652,11 @@ bot.on('message', async (msg) => {
 
   if (session.state === 'active') {
     session.messagesCount += 1;
+    const reply = randomActiveReply();
+    const isFirstReply = session.botReplyCount === 0;
+    await sendMessageWithTyping(chatId, reply, { skipDelay: isFirstReply });
+    session.botReplyCount += 1;
     upsertSession(chatId, session);
-    await bot.sendMessage(chatId, randomActiveReply());
     return;
   }
 

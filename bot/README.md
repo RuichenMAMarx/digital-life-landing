@@ -18,6 +18,10 @@ node server.js
 - `PREFERRED_CHANNEL_KINDS`: e.g. `telegram,whatsapp`
 - `RUNTIME_POLL_INTERVAL_MS`: polling interval for runtime init status (default 6000)
 - `RUNTIME_POLL_MAX_ATTEMPTS`: max runtime polling attempts (default 25)
+- `ENABLE_TYPING_DELAY`: enable paced replies in active chat (default true)
+- `TYPING_CPS`: characters per second for delay estimation (default 6)
+- `TYPING_MIN_DELAY_MS`: min delay for paced replies (default 1200)
+- `TYPING_MAX_DELAY_MS`: max delay for paced replies (default 7000)
 - `ORCHESTRATOR_WEBHOOK_URL`: legacy handoff webhook fallback
 
 ## Flow
@@ -31,7 +35,7 @@ node server.js
 6. If runtime is still provisioning, bot keeps user in pending state and polls control-plane status
 7. When runtime ready, bot proactively confirms initialization to user
 8. If control-plane returns `payment_pending`, bot enters `awaiting_payment` and asks user to complete payment then send “已支付” to retry
-8. If init fails/times out, bot degrades to same-chat active mode
+9. If init fails/times out, bot degrades to same-chat active mode
 
 ## Persistence
 - `BOT_DATA_DIR/sessions.json`: bot session state + asset metadata

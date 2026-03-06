@@ -88,6 +88,7 @@ Recommended constraints:
 - Message pacing guideline
   - First sentence: no extra delay after model output
   - Following sentences: delay with `1x typing speed` (chars / cps with min/max clamp)
+  - Status: `Implemented` for bot active-chat replies
 - Practical note
   - Telegram network/client latency still affects visible timing
   - If stronger rhythm is required, enforce a server-side minimum delay (for example 1.2s)
