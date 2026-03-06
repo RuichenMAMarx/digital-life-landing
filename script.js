@@ -186,6 +186,7 @@ const checkAudio = document.getElementById('checkAudio');
 const checkTrialData = document.getElementById('checkTrialData');
 const modalTitle = modal.querySelector('h2');
 const modalDesc = modal.querySelector('.modal-desc');
+let latestFullPlanContext = null;
 
 let currentPlan = 'trial';
 const PAGE_CONFIG = window.DIGITAL_LIFE_CONFIG || {};
@@ -235,8 +236,110 @@ async function submitApplyOrder() {
         uid: data.uid,
         telegramDeepLink: data.telegramDeepLink || defaultDeepLink(data.uid),
         statusUrl: data.statusUrl || '',
+        paymentStatus: data.paymentStatus || '',
         fallback: false
     };
+}
+
+function normalizePaymentStatus(status) {
+    const raw = String(status || '').trim().toLowerCase();
+    if (!raw) return 'unknown';
+    return raw;
+}
+
+function paymentStatusText(status) {
+    const map = {
+        pending: '待支付',
+        paid: '已支付',
+        waived: '已豁免',
+        failed: '支付失败',
+        refunded: '已退款',
+        canceled: '已取消',
+        unknown: '未知'
+    };
+    return map[normalizePaymentStatus(status)] || status;
+}
+
+function upsertImDeepLinkButton(href, labelText) {
+    let imBtn = document.getElementById('imDeepLinkBtn');
+    if (!imBtn) {
+        imBtn = document.createElement('a');
+        imBtn.id = 'imDeepLinkBtn';
+        imBtn.className = 'cta-btn m-top';
+        imBtn.style.display = 'flex';
+        imBtn.style.width = '100%';
+        imBtn.style.justifyContent = 'center';
+        imBtn.style.fontSize = '1.1rem';
+        stripePaymentForm.parentNode.insertBefore(imBtn, stripePaymentForm.nextSibling);
+    }
+    imBtn.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 1.5rem; margin-right: 10px;"></i> ' + labelText;
+    imBtn.href = href;
+}
+
+function removeImDeepLinkButton() {
+    const existingImBtn = document.getElementById('imDeepLinkBtn');
+    if (existingImBtn) existingImBtn.remove();
+}
+
+function ensureFullPlanStatusPanel() {
+    let panel = document.getElementById('fullPlanStatusPanel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'fullPlanStatusPanel';
+        panel.style.marginTop = '12px';
+        panel.style.padding = '12px';
+        panel.style.borderRadius = '8px';
+        panel.style.border = '1px solid var(--glass-border)';
+        panel.style.background = 'rgba(0, 0, 0, 0.25)';
+        panel.style.fontSize = '0.9rem';
+        stripePaymentForm.parentNode.insertBefore(panel, stripePaymentForm.nextSibling);
+    }
+    return panel;
+}
+
+function removeFullPlanStatusPanel() {
+    const panel = document.getElementById('fullPlanStatusPanel');
+    if (panel) panel.remove();
+}
+
+async function refreshFullPlanPaymentState() {
+    if (!latestFullPlanContext || !latestFullPlanContext.statusUrl) return;
+    const panel = ensureFullPlanStatusPanel();
+    const btn = panel.querySelector('#refreshPaymentBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '正在查询...';
+    }
+
+    try {
+        const res = await fetch(latestFullPlanContext.statusUrl, { method: 'GET' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || 'status_query_failed');
+        }
+        const paymentStatus = normalizePaymentStatus(data?.order?.paymentStatus || latestFullPlanContext.paymentStatus || 'unknown');
+        latestFullPlanContext.paymentStatus = paymentStatus;
+
+        const canEnterIm = paymentStatus === 'paid' || paymentStatus === 'waived';
+        panel.innerHTML = `
+            <div><strong>订单状态：</strong>${paymentStatusText(paymentStatus)}</div>
+            <div style="margin-top: 8px; opacity: 0.75;">UID：${latestFullPlanContext.uid}</div>
+            <button id="refreshPaymentBtn" class="cta-btn m-top" style="width:100%; justify-content:center; font-size:0.95rem;">刷新支付状态</button>
+        `;
+        panel.querySelector('#refreshPaymentBtn').onclick = refreshFullPlanPaymentState;
+
+        if (canEnterIm) {
+            upsertImDeepLinkButton(latestFullPlanContext.telegramDeepLink, '接入 Telegram 唤醒终端');
+        } else {
+            removeImDeepLinkButton();
+        }
+    } catch (err) {
+        panel.innerHTML = `
+            <div><strong>订单状态查询失败</strong>：${String(err.message || err)}</div>
+            <button id="refreshPaymentBtn" class="cta-btn m-top" style="width:100%; justify-content:center; font-size:0.95rem;">重试查询</button>
+        `;
+        panel.querySelector('#refreshPaymentBtn').onclick = refreshFullPlanPaymentState;
+    }
 }
 
 // Handle plan change
@@ -290,10 +393,27 @@ applyForm.addEventListener('submit', async (e) => {
             modalTitle.textContent = '算力排期请求已建立';
             modalDesc.innerHTML = '新生命构建从确认您的专属 UID 开始。<br>请完成定金支付以正式锁定 550W 算力周期，当前算力预估需要等待：<span class="highlight">1.4 年</span><br><br><small style="color: rgba(255,255,255,0.5);"><i class="fa-solid fa-lock"></i> 支付由 Stripe 提供企业级安全加密保障</small>';
             stripePaymentForm.style.display = 'block';
-
-            // Remove any dynamically added IM buttons
-            const existingImBtn = document.getElementById('imDeepLinkBtn');
-            if (existingImBtn) existingImBtn.remove();
+            removeImDeepLinkButton();
+            latestFullPlanContext = {
+                uid,
+                statusUrl: applyResult.statusUrl || '',
+                paymentStatus: normalizePaymentStatus(applyResult.paymentStatus || 'unknown'),
+                telegramDeepLink: applyResult.telegramDeepLink || defaultDeepLink(uid)
+            };
+            const panel = ensureFullPlanStatusPanel();
+            panel.innerHTML = `
+                <div><strong>订单状态：</strong>${paymentStatusText(latestFullPlanContext.paymentStatus)}</div>
+                <div style="margin-top: 8px; opacity: 0.75;">UID：${uid}</div>
+                <button id="refreshPaymentBtn" class="cta-btn m-top" style="width:100%; justify-content:center; font-size:0.95rem;">刷新支付状态</button>
+            `;
+            panel.querySelector('#refreshPaymentBtn').onclick = refreshFullPlanPaymentState;
+            if (!latestFullPlanContext.statusUrl) {
+                panel.innerHTML += '<div style="margin-top: 8px; color: #ffad33;">当前为演示模式，后端状态查询不可用。</div>';
+            }
+            const canEnterImDirectly = latestFullPlanContext.paymentStatus === 'paid' || latestFullPlanContext.paymentStatus === 'waived';
+            if (canEnterImDirectly) {
+                upsertImDeepLinkButton(latestFullPlanContext.telegramDeepLink, '接入 Telegram 唤醒终端');
+            }
 
         } else {
             modalTitle.textContent = '体验生命基座已初始化';
@@ -303,25 +423,12 @@ applyForm.addEventListener('submit', async (e) => {
                     点击下方按钮进入加密终端，发送您的影像与声音特征。
                 </div>`;
             stripePaymentForm.style.display = 'none';
+            removeFullPlanStatusPanel();
+            latestFullPlanContext = null;
 
             // Generate IM Deep Link Button (e.g., Telegram)
             const deepLinkUrl = applyResult.telegramDeepLink || defaultDeepLink(uid);
-
-            // Check if button already exists, if not create it
-            let imBtn = document.getElementById('imDeepLinkBtn');
-            if (!imBtn) {
-                imBtn = document.createElement('a');
-                imBtn.id = 'imDeepLinkBtn';
-                imBtn.className = 'cta-btn m-top';
-                imBtn.style.display = 'flex';
-                imBtn.style.width = '100%';
-                imBtn.style.justifyContent = 'center';
-                imBtn.style.fontSize = '1.1rem';
-                imBtn.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 1.5rem; margin-right: 10px;"></i> 接入 Telegram 唤醒终端';
-                // Insert after Stripe form
-                stripePaymentForm.parentNode.insertBefore(imBtn, stripePaymentForm.nextSibling);
-            }
-            imBtn.href = deepLinkUrl;
+            upsertImDeepLinkButton(deepLinkUrl, '接入 Telegram 唤醒终端');
 
             if (applyResult.fallback) {
                 modalDesc.innerHTML += '<br><small style="color:#ffad33;"><i class="fa-solid fa-triangle-exclamation"></i> 当前后端不可用，已使用本地演示 UID。</small>';
@@ -356,4 +463,6 @@ applyForm.addEventListener('submit', async (e) => {
 
 window.closeModal = () => {
     modal.classList.remove('active');
+    removeFullPlanStatusPanel();
+    latestFullPlanContext = null;
 };

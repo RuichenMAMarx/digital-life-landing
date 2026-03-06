@@ -57,18 +57,19 @@ flowchart LR
 1. 用户进入 Landing，填写基础信息与体验诉求。  
 2. Landing 调用 `POST /api/apply`，生成唯一 UID（例如 `UID-550W-XXXXXX`）。  
 3. 支付系统回调通过 `POST /api/payment/webhook/stripe`（签名校验）或人工补单 `POST /api/order/payment` 更新订单支付状态。  
-4. 页面展示 UID + Deep Link，用户点击跳转 TG Bot。  
-5. Bot 收到 `/start UID-...`，调用 `POST /api/bind` 绑定 `uid + chatId`。  
-6. Bot 引导用户上传初始化素材（至少 1 张照片 + 至少 10 秒语音）。  
-7. 素材满足条件后，Bot 调用 `POST /api/handoff`。  
-8. Control Plane 执行两件事：
+4. Landing 可通过 `statusUrl` 刷新订单支付态；当状态为 `paid/waived` 后放行 TG Deep Link。  
+5. 页面展示 UID + Deep Link，用户点击跳转 TG Bot。  
+6. Bot 收到 `/start UID-...`，调用 `POST /api/bind` 绑定 `uid + chatId`。  
+7. Bot 引导用户上传初始化素材（至少 1 张照片 + 至少 10 秒语音）。  
+8. 素材满足条件后，Bot 调用 `POST /api/handoff`。  
+9. Control Plane 执行两件事：
 - 分配独立会话通道（Telegram/WhatsApp/virtual fallback）
 - 触发 OpenClaw Runtime 实例化（`none` 或 `webhook` 模式）
-9. 若 runtime 同步返回 `ready`，会话立即进入 `active`。  
-10. 若 runtime 返回 `provisioning`，Bot 轮询 `GET /api/session/:uid/status`，等待 callback。  
-11. OpenClaw 通过 `POST /api/runtime/callback` 写回 `ready/failed`。  
-12. Bot 主动通知买家“初始化完成”，发送 First Contact（文本/语音/视频），进入持续交互。  
-13. 达到体验阈值后触发升级漏斗（订阅、套餐、复购）。
+10. 若 runtime 同步返回 `ready`，会话立即进入 `active`。  
+11. 若 runtime 返回 `provisioning`，Bot 轮询 `GET /api/session/:uid/status`，等待 callback。  
+12. OpenClaw 通过 `POST /api/runtime/callback` 写回 `ready/failed`。  
+13. Bot 主动通知买家“初始化完成”，发送 First Contact（文本/语音/视频），进入持续交互。  
+14. 达到体验阈值后触发升级漏斗（订阅、套餐、复购）。
 
 ## 5. 状态机（订单 + 会话 + 运行时）
 - 订单态（建议）

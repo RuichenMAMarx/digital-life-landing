@@ -57,18 +57,19 @@ flowchart LR
 1. User enters landing and submits intent + basic profile.
 2. Landing calls `POST /api/apply` and gets a unique UID (`UID-550W-XXXXXX`).
 3. Payment service callback updates order payment state via `POST /api/payment/webhook/stripe` (signature verified), or manual ops can patch via `POST /api/order/payment`.
-4. UI shows UID + deep link to Telegram bot.
-5. Bot receives `/start UID-...` and calls `POST /api/bind` with `uid + chatId`.
-6. Bot asks for initialization assets (>=1 photo + >=10s voice).
-7. Once validated, bot calls `POST /api/handoff`.
-8. Control Plane does two things in parallel:
+4. Landing can refresh payment state via `statusUrl`; when state becomes `paid/waived`, Telegram deep link is unlocked.
+5. UI shows UID + deep link to Telegram bot.
+6. Bot receives `/start UID-...` and calls `POST /api/bind` with `uid + chatId`.
+7. Bot asks for initialization assets (>=1 photo + >=10s voice).
+8. Once validated, bot calls `POST /api/handoff`.
+9. Control Plane does two things in parallel:
 - allocate dedicated channel from pool (TG/WhatsApp/virtual fallback)
 - trigger OpenClaw runtime provisioning (`none` or `webhook` mode)
-9. If runtime responds `ready` synchronously, session moves to `active` immediately.
-10. If runtime responds `provisioning`, bot polls `GET /api/session/:uid/status`.
-11. OpenClaw posts async result to `POST /api/runtime/callback` (`ready/failed`).
-12. Bot proactively informs the buyer that initialization is complete and sends First Contact.
-13. Conversation continues until upsell thresholds trigger paid lifecycle flow.
+10. If runtime responds `ready` synchronously, session moves to `active` immediately.
+11. If runtime responds `provisioning`, bot polls `GET /api/session/:uid/status`.
+12. OpenClaw posts async result to `POST /api/runtime/callback` (`ready/failed`).
+13. Bot proactively informs the buyer that initialization is complete and sends First Contact.
+14. Conversation continues until upsell thresholds trigger paid lifecycle flow.
 
 ## 5. State Model
 - Order state (recommended)
