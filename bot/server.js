@@ -201,10 +201,31 @@ async function postControlPlane(pathname, payload) {
 
   if (!res.ok) {
     const reason = data?.error || data?.raw || `status_${res.status}`;
-    throw new Error(`control-plane ${pathname} failed: ${reason}`);
+    const err = new Error(`control-plane ${pathname} failed: ${reason}`);
+    err.code = String(reason || '');
+    err.httpStatus = res.status;
+    err.payload = data;
+    throw err;
   }
 
   return data;
+}
+
+function normalizeErrorCode(err) {
+  if (!err) return '';
+  if (typeof err.code === 'string' && err.code) return err.code;
+  const message = String(err.message || err);
+  const m = message.match(/failed:\s*([a-z_0-9-]+)/i);
+  return m ? m[1].toLowerCase() : '';
+}
+
+function isPaymentGateError(code) {
+  const text = String(code || '').toLowerCase();
+  return text === 'payment_pending'
+    || text === 'payment_failed'
+    || text === 'payment_refunded'
+    || text === 'payment_canceled'
+    || text === 'payment_required';
 }
 
 async function syncBindingToControlPlane(uid, msg) {
@@ -363,8 +384,13 @@ async function triggerHandoff(session) {
       updated.handoff.runtime = data?.runtime || null;
       return updated;
     } catch (err) {
-      updated.handoff.error = String(err.message || err);
+      const code = normalizeErrorCode(err);
+      updated.handoff.error = code || String(err.message || err);
       console.warn('control-plane handoff failed:', updated.handoff.error);
+      if (isPaymentGateError(code)) {
+        updated.handoff.delivered = false;
+        return updated;
+      }
     }
   }
 
@@ -435,6 +461,16 @@ async function onAssetsReady(chatId, session) {
     upsertSession(chatId, next);
     await bot.sendMessage(chatId, handoffProvisioningText(runtime));
     void pollRuntimeForChat(chatId, session.uid);
+    return;
+  }
+
+  if (isPaymentGateError(next.handoff.error)) {
+    next.state = 'awaiting_payment';
+    upsertSession(chatId, next);
+    await bot.sendMessage(
+      chatId,
+      '[系统提示]\n当前订单尚未完成支付校验，暂不能初始化丫丫。\n完成支付后发送“已支付”即可自动重试。'
+    );
     return;
   }
 
@@ -572,6 +608,18 @@ bot.on('message', async (msg) => {
 
   if (session.state === 'handoff_pending') {
     await bot.sendMessage(chatId, '素材已收齐，丫丫正在初始化并分配独立会话，请稍候。');
+    return;
+  }
+
+  if (session.state === 'awaiting_payment') {
+    const textLower = String(text || '').trim().toLowerCase();
+    const shouldRetry = /已支付|支付好了|付款完成|paid|retry|重试/.test(textLower);
+    if (shouldRetry) {
+      await bot.sendMessage(chatId, '[系统提示]\n正在复核支付状态并重试初始化，请稍候。');
+      await onAssetsReady(chatId, session);
+      return;
+    }
+    await bot.sendMessage(chatId, '订单仍在待支付状态。完成支付后发送“已支付”，我会继续为你初始化丫丫。');
     return;
   }
 

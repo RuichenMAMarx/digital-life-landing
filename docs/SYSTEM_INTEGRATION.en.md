@@ -56,7 +56,7 @@ flowchart LR
 ## 4. End-to-End Flow (Interaction-Level)
 1. User enters landing and submits intent + basic profile.
 2. Landing calls `POST /api/apply` and gets a unique UID (`UID-550W-XXXXXX`).
-3. Payment service (or manual ops) updates order payment state via `POST /api/order/payment`.
+3. Payment service callback updates order payment state via `POST /api/payment/webhook/stripe` (signature verified), or manual ops can patch via `POST /api/order/payment`.
 4. UI shows UID + deep link to Telegram bot.
 5. Bot receives `/start UID-...` and calls `POST /api/bind` with `uid + chatId`.
 6. Bot asks for initialization assets (>=1 photo + >=10s voice).

@@ -128,6 +128,18 @@ function createPostgresStore(config) {
     await pool.query('ALTER TABLE cp_orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ NULL');
     await pool.query('ALTER TABLE cp_orders ADD COLUMN IF NOT EXISTS payment_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()');
     await pool.query('ALTER TABLE cp_sessions ADD COLUMN IF NOT EXISTS runtime JSONB NULL');
+    await pool.query(
+      `CREATE TABLE IF NOT EXISTS cp_payment_events (
+        event_id TEXT PRIMARY KEY,
+        provider TEXT NOT NULL,
+        type TEXT NOT NULL,
+        uid TEXT NULL,
+        order_id TEXT NULL,
+        payment_status TEXT NULL,
+        payload JSONB NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`
+    );
   }
 
   async function ensureMetaAndChannels() {
@@ -428,6 +440,78 @@ function createPostgresStore(config) {
       });
     },
 
+    async updateOrderPaymentByOrderId(input) {
+      return withTx(async (client) => {
+        const existingRow = (await client.query(
+          'SELECT * FROM cp_orders WHERE order_id::text = $1 FOR UPDATE',
+          [String(input.orderId || '')]
+        )).rows[0];
+
+        if (!existingRow) {
+          return null;
+        }
+
+        const now = nowIso();
+        const nextPaymentStatus = input.paymentStatus || existingRow.payment_status || 'pending';
+        const nextPaidAt = input.paidAt !== undefined
+          ? (input.paidAt ? new Date(input.paidAt) : null)
+          : (nextPaymentStatus === 'paid'
+            ? (existingRow.paid_at || new Date(now))
+            : existingRow.paid_at);
+
+        const updatedRow = (await client.query(
+          `UPDATE cp_orders
+           SET payment_status = $2,
+               payment_provider = $3,
+               payment_reference = $4,
+               payment_message = $5,
+               paid_at = $6,
+               payment_updated_at = NOW(),
+               updated_at = NOW()
+           WHERE order_id::text = $1
+           RETURNING *`,
+          [
+            String(input.orderId || ''),
+            nextPaymentStatus,
+            input.paymentProvider !== undefined ? input.paymentProvider : (existingRow.payment_provider || null),
+            input.paymentReference !== undefined ? input.paymentReference : (existingRow.payment_reference || null),
+            input.paymentMessage !== undefined ? input.paymentMessage : (existingRow.payment_message || null),
+            nextPaidAt
+          ]
+        )).rows[0];
+
+        return mapOrderRow(updatedRow);
+      });
+    },
+
+    async isPaymentEventProcessed(eventId) {
+      if (!eventId) return false;
+      const exists = await pool.query('SELECT 1 FROM cp_payment_events WHERE event_id = $1', [eventId]);
+      return exists.rowCount > 0;
+    },
+
+    async recordPaymentEvent(input) {
+      const inserted = await pool.query(
+        `INSERT INTO cp_payment_events(event_id, provider, type, uid, order_id, payment_status, payload, created_at)
+         VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,NOW())
+         ON CONFLICT (event_id) DO NOTHING
+         RETURNING event_id`,
+        [
+          input.eventId,
+          input.provider || 'unknown',
+          input.type || 'unknown',
+          input.uid || null,
+          input.orderId || null,
+          input.paymentStatus || null,
+          JSON.stringify(input.raw || null)
+        ]
+      );
+      if (inserted.rowCount > 0) {
+        return { recorded: true, duplicate: false };
+      }
+      return { recorded: false, duplicate: true };
+    },
+
     async bindSession(input) {
       return withTx(async (client) => {
         const prev = await getSessionByUid(client, input.uid);
@@ -534,11 +618,12 @@ function createPostgresStore(config) {
     },
 
     async getAdminState() {
-      const [orders, sessions, assignments, channels, meta] = await Promise.all([
+      const [orders, sessions, assignments, channels, paymentEvents, meta] = await Promise.all([
         pool.query('SELECT COUNT(*)::int AS count FROM cp_orders'),
         pool.query('SELECT COUNT(*)::int AS count FROM cp_sessions'),
         pool.query('SELECT COUNT(*)::int AS count FROM cp_assignments'),
         pool.query('SELECT COUNT(*)::int AS count FROM cp_channels'),
+        pool.query('SELECT COUNT(*)::int AS count FROM cp_payment_events'),
         pool.query("SELECT value_text, updated_at FROM cp_meta WHERE key = 'roundRobinIndex'")
       ]);
 
@@ -550,6 +635,7 @@ function createPostgresStore(config) {
         },
         counts: {
           orders: Number(orders.rows[0]?.count || 0),
+          paymentEvents: Number(paymentEvents.rows[0]?.count || 0),
           sessions: Number(sessions.rows[0]?.count || 0),
           assignments: Number(assignments.rows[0]?.count || 0),
           channels: Number(channels.rows[0]?.count || 0)

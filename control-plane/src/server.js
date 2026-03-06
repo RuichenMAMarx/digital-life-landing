@@ -12,6 +12,7 @@ const {
   nowIso
 } = require('./lib/utils');
 const { createRuntimeOrchestratorFromEnv } = require('./runtime/orchestrator');
+const { verifyStripeSignature, mapStripeEventToPaymentUpdate } = require('./payment/stripeWebhook');
 
 const PORT = Number(process.env.PORT || 8787);
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
@@ -19,6 +20,9 @@ const TG_BOT_USERNAME = process.env.TG_BOT_USERNAME || 'splandour_550w_bot';
 const CONTROL_PLANE_KEY = process.env.CONTROL_PLANE_KEY || '';
 const REQUIRE_PAYMENT_FOR_HANDOFF = String(process.env.REQUIRE_PAYMENT_FOR_HANDOFF || 'true').trim().toLowerCase() !== 'false';
 const FREE_PLAN_TYPES = resolveFreePlanTypes(process.env.FREE_PLAN_TYPES);
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+const STRIPE_WEBHOOK_REQUIRE_SIGNATURE = String(process.env.STRIPE_WEBHOOK_REQUIRE_SIGNATURE || 'true').trim().toLowerCase() !== 'false';
+const STRIPE_WEBHOOK_TOLERANCE_SECONDS = Number(process.env.STRIPE_WEBHOOK_TOLERANCE_SECONDS || 300);
 
 function internalAuth(req, res, next) {
   if (!CONTROL_PLANE_KEY) {
@@ -47,6 +51,120 @@ async function main() {
 
   const app = express();
   app.use(cors());
+  app.post('/api/payment/webhook/stripe', express.raw({ type: 'application/json' }), asyncHandler(async (req, res) => {
+    const rawBuffer = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {}));
+    const rawBody = rawBuffer.toString('utf8');
+
+    if (STRIPE_WEBHOOK_REQUIRE_SIGNATURE) {
+      const stripeSignature = req.header('stripe-signature') || '';
+      const verified = verifyStripeSignature({
+        rawBody,
+        signatureHeader: stripeSignature,
+        webhookSecret: STRIPE_WEBHOOK_SECRET,
+        toleranceSeconds: STRIPE_WEBHOOK_TOLERANCE_SECONDS
+      });
+      if (!verified) {
+        return res.status(400).json({ ok: false, error: 'invalid_stripe_signature' });
+      }
+    }
+
+    let event = null;
+    try {
+      event = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      return res.status(400).json({ ok: false, error: 'invalid_json' });
+    }
+
+    const eventId = normalizeText(event?.id, 128);
+    const eventType = normalizeText(event?.type, 128) || 'unknown';
+    if (!eventId) {
+      return res.status(400).json({ ok: false, error: 'missing_event_id' });
+    }
+
+    if (typeof store.isPaymentEventProcessed === 'function') {
+      const alreadyProcessed = await store.isPaymentEventProcessed(eventId);
+      if (alreadyProcessed) {
+        return res.json({ ok: true, duplicate: true, eventId, eventType });
+      }
+    }
+
+    const mapped = mapStripeEventToPaymentUpdate(event);
+    if (!mapped.supported) {
+      if (typeof store.recordPaymentEvent === 'function') {
+        await store.recordPaymentEvent({
+          eventId,
+          provider: 'stripe',
+          type: eventType,
+          uid: mapped.uid || null,
+          orderId: mapped.orderId || null,
+          paymentStatus: null,
+          raw: { ignored: true, reason: mapped.reason, type: eventType }
+        });
+      }
+      return res.json({ ok: true, ignored: true, reason: mapped.reason, eventId, eventType });
+    }
+
+    let order = null;
+    if (mapped.uid) {
+      order = await store.updateOrderPayment({
+        uid: mapped.uid,
+        paymentStatus: mapped.paymentStatus,
+        paymentProvider: mapped.paymentProvider,
+        paymentReference: mapped.paymentReference,
+        paymentMessage: mapped.paymentMessage,
+        paidAt: mapped.paidAt
+      });
+    }
+    if (!order && mapped.orderId && typeof store.updateOrderPaymentByOrderId === 'function') {
+      order = await store.updateOrderPaymentByOrderId({
+        orderId: mapped.orderId,
+        paymentStatus: mapped.paymentStatus,
+        paymentProvider: mapped.paymentProvider,
+        paymentReference: mapped.paymentReference,
+        paymentMessage: mapped.paymentMessage,
+        paidAt: mapped.paidAt
+      });
+    }
+
+    if (typeof store.recordPaymentEvent === 'function') {
+      await store.recordPaymentEvent({
+        eventId,
+        provider: 'stripe',
+        type: mapped.type || eventType,
+        uid: mapped.uid || null,
+        orderId: mapped.orderId || null,
+        paymentStatus: mapped.paymentStatus,
+        raw: {
+          matchedOrder: Boolean(order),
+          paymentReference: mapped.paymentReference,
+          paymentMessage: mapped.paymentMessage
+        }
+      });
+    }
+
+    if (!order) {
+      return res.json({
+        ok: true,
+        ignored: true,
+        reason: 'order_not_found',
+        eventId,
+        eventType,
+        uid: mapped.uid || null,
+        orderId: mapped.orderId || null
+      });
+    }
+
+    return res.json({
+      ok: true,
+      eventId,
+      eventType,
+      uid: order.uid,
+      orderId: order.orderId,
+      paymentStatus: order.paymentStatus
+    });
+  }));
   app.use(express.json({ limit: '2mb' }));
 
   app.get('/health', asyncHandler(async (req, res) => {
@@ -58,6 +176,7 @@ async function main() {
       runtimeMode: runtimeOrchestrator.mode,
       requirePaymentForHandoff: REQUIRE_PAYMENT_FOR_HANDOFF,
       freePlanTypes: Array.from(FREE_PLAN_TYPES),
+      stripeWebhookSignatureRequired: STRIPE_WEBHOOK_REQUIRE_SIGNATURE,
       now: nowIso(),
       channelPoolSize: health.channelPoolSize,
       activeAssignments: health.activeAssignments
@@ -188,8 +307,9 @@ async function main() {
 
   app.post('/api/order/payment', internalAuth, asyncHandler(async (req, res) => {
     const uid = normalizeText(req.body?.uid, 128);
-    if (!uid) {
-      return res.status(400).json({ ok: false, error: 'uid required' });
+    const orderId = normalizeText(req.body?.orderId, 128);
+    if (!uid && !orderId) {
+      return res.status(400).json({ ok: false, error: 'uid or orderId required' });
     }
 
     const paymentStatus = normalizePaymentStatus(req.body?.paymentStatus, '');
@@ -212,20 +332,27 @@ async function main() {
       }
     }
 
-    const order = await store.updateOrderPayment({
-      uid,
+    const payload = {
       paymentStatus,
       paymentProvider,
       paymentReference,
       paymentMessage,
       paidAt: paidAtRaw || undefined
-    });
+    };
 
-    if (!order) {
-      return res.status(404).json({ ok: false, error: 'uid not found' });
+    let order = null;
+    if (uid) {
+      order = await store.updateOrderPayment({ ...payload, uid });
+    }
+    if (!order && orderId && typeof store.updateOrderPaymentByOrderId === 'function') {
+      order = await store.updateOrderPaymentByOrderId({ ...payload, orderId });
     }
 
-    return res.json({ ok: true, uid, order });
+    if (!order) {
+      return res.status(404).json({ ok: false, error: 'order not found' });
+    }
+
+    return res.json({ ok: true, uid: order.uid, orderId: order.orderId, order });
   }));
 
   app.post('/api/allocate-channel', internalAuth, asyncHandler(async (req, res) => {

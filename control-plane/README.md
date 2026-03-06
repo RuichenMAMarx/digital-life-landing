@@ -43,6 +43,7 @@ docker compose up --build
 - `POST /api/bind`：bot 绑定 `uid <-> tg chat`
 - `POST /api/handoff`：素材齐后请求分配独立会话，并触发运行时实例化
 - `POST /api/order/payment`：更新订单支付状态（支付回调/人工补单）
+- `POST /api/payment/webhook/stripe`：Stripe 支付回调（签名校验 + 幂等事件）
 - `POST /api/allocate-channel`：手动分配（运维）
 - `POST /api/release-channel`：释放会话占用
 - `POST /api/runtime/callback`：运行时异步回传实例化状态
@@ -66,6 +67,12 @@ docker compose up --build
 - `REQUIRE_PAYMENT_FOR_HANDOFF=true`：开启后，只有 `paid/waived` 订单可进入 `/api/handoff`
 - `FREE_PLAN_TYPES=trial,demo`：这些计划类型在创建订单时自动标记为 `waived`
 - 支持的支付状态：`pending | paid | waived | failed | refunded | canceled`
+
+## Stripe 回调配置
+- `STRIPE_WEBHOOK_SECRET`：Stripe endpoint secret
+- `STRIPE_WEBHOOK_REQUIRE_SIGNATURE=true`：是否强制校验 `stripe-signature`
+- `STRIPE_WEBHOOK_TOLERANCE_SECONDS=300`：签名时间窗口
+- 建议在 Stripe Checkout metadata 中带上 `uid`（或 `order_id/orderId`）用于订单匹配
 
 ## 数据文件（JSON 模式）
 - `data/db.json`

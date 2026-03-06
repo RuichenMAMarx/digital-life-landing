@@ -63,6 +63,17 @@ CREATE TABLE IF NOT EXISTS cp_channels (
 CREATE INDEX IF NOT EXISTS cp_channels_enabled_sort_idx ON cp_channels(enabled, sort_order, id);
 CREATE INDEX IF NOT EXISTS cp_channels_active_uid_idx ON cp_channels(active_uid);
 
+CREATE TABLE IF NOT EXISTS cp_payment_events (
+  event_id TEXT PRIMARY KEY,
+  provider TEXT NOT NULL,
+  type TEXT NOT NULL,
+  uid TEXT NULL,
+  order_id TEXT NULL,
+  payment_status TEXT NULL,
+  payload JSONB NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 INSERT INTO cp_meta(key, value_text, updated_at)
 VALUES('roundRobinIndex', '0', NOW())
 ON CONFLICT (key) DO NOTHING;

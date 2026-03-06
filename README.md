@@ -99,6 +99,8 @@ docker compose up --build
 - `POST /api/apply`
 - `POST /api/bind`
 - `POST /api/handoff`
+- `POST /api/order/payment`
+- `POST /api/payment/webhook/stripe`
 - `POST /api/allocate-channel`
 - `POST /api/release-channel`
 - `GET /api/session/:uid/status`

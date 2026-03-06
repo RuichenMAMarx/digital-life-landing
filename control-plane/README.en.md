@@ -42,6 +42,7 @@ docker compose up --build
 - `POST /api/bind`
 - `POST /api/handoff` (allocation + runtime provisioning trigger)
 - `POST /api/order/payment` (payment callback/manual payment patch)
+- `POST /api/payment/webhook/stripe` (Stripe payment callback with signature verification + idempotent event log)
 - `POST /api/allocate-channel`
 - `POST /api/release-channel`
 - `POST /api/runtime/callback` (async runtime status callback)
@@ -65,3 +66,9 @@ docker compose up --build
 - `REQUIRE_PAYMENT_FOR_HANDOFF=true`: only `paid/waived` orders can enter `/api/handoff`
 - `FREE_PLAN_TYPES=trial,demo`: these plans are auto-marked as `waived` at order creation
 - Supported payment statuses: `pending | paid | waived | failed | refunded | canceled`
+
+## Stripe Webhook Config
+- `STRIPE_WEBHOOK_SECRET`: Stripe endpoint secret
+- `STRIPE_WEBHOOK_REQUIRE_SIGNATURE=true`: whether to enforce `stripe-signature` validation
+- `STRIPE_WEBHOOK_TOLERANCE_SECONDS=300`: signature timestamp tolerance window
+- Include `uid` (or `order_id/orderId`) in Stripe Checkout metadata for reliable order matching

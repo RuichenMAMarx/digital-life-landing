@@ -30,6 +30,7 @@ node server.js
 5. Bot calls control-plane handoff (`/api/handoff`) for dedicated channel allocation + runtime init
 6. If runtime is still provisioning, bot keeps user in pending state and polls control-plane status
 7. When runtime ready, bot proactively confirms initialization to user
+8. If control-plane returns `payment_pending`, bot enters `awaiting_payment` and asks user to complete payment then send “已支付” to retry
 8. If init fails/times out, bot degrades to same-chat active mode
 
 ## Persistence

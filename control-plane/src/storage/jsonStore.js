@@ -18,6 +18,7 @@ function createEmptyState() {
       updatedAt: nowIso()
     },
     ordersByUid: {},
+    paymentEventsById: {},
     sessionsByUid: {},
     assignmentsByUid: {},
     channelPool: []
@@ -32,6 +33,7 @@ function normalizeState(raw) {
   };
 
   next.ordersByUid = raw && raw.ordersByUid ? raw.ordersByUid : {};
+  next.paymentEventsById = raw && raw.paymentEventsById ? raw.paymentEventsById : {};
   next.sessionsByUid = raw && raw.sessionsByUid ? raw.sessionsByUid : {};
   next.assignmentsByUid = raw && raw.assignmentsByUid ? raw.assignmentsByUid : {};
 
@@ -228,6 +230,41 @@ function createJsonStore(config) {
       return next;
     },
 
+    async updateOrderPaymentByOrderId(input) {
+      if (!input.orderId) return null;
+      const foundUid = Object.keys(state.ordersByUid).find(
+        (uid) => String(state.ordersByUid[uid]?.orderId || '') === String(input.orderId)
+      );
+      if (!foundUid) return null;
+      return this.updateOrderPayment({ ...input, uid: foundUid });
+    },
+
+    async isPaymentEventProcessed(eventId) {
+      if (!eventId) return false;
+      return Boolean(state.paymentEventsById[eventId]);
+    },
+
+    async recordPaymentEvent(input) {
+      if (!input?.eventId) {
+        return { recorded: false };
+      }
+      if (state.paymentEventsById[input.eventId]) {
+        return { recorded: false, duplicate: true };
+      }
+      state.paymentEventsById[input.eventId] = {
+        eventId: input.eventId,
+        provider: input.provider || 'unknown',
+        type: input.type || 'unknown',
+        uid: input.uid || null,
+        orderId: input.orderId || null,
+        paymentStatus: input.paymentStatus || null,
+        processedAt: nowIso(),
+        raw: input.raw || null
+      };
+      await flushState();
+      return { recorded: true, duplicate: false };
+    },
+
     async bindSession(input) {
       const prev = state.sessionsByUid[input.uid] || null;
       const nextStatus = state.assignmentsByUid[input.uid]
@@ -348,6 +385,7 @@ function createJsonStore(config) {
         meta: state.meta,
         counts: {
           orders: Object.keys(state.ordersByUid).length,
+          paymentEvents: Object.keys(state.paymentEventsById).length,
           sessions: Object.keys(state.sessionsByUid).length,
           assignments: Object.keys(state.assignmentsByUid).length,
           channels: state.channelPool.length

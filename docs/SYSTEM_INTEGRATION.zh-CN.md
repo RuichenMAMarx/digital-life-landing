@@ -56,7 +56,7 @@ flowchart LR
 ## 4. 端到端流程（含交互细节）
 1. 用户进入 Landing，填写基础信息与体验诉求。  
 2. Landing 调用 `POST /api/apply`，生成唯一 UID（例如 `UID-550W-XXXXXX`）。  
-3. 支付系统（或人工补单）通过 `POST /api/order/payment` 更新订单支付状态。  
+3. 支付系统回调通过 `POST /api/payment/webhook/stripe`（签名校验）或人工补单 `POST /api/order/payment` 更新订单支付状态。  
 4. 页面展示 UID + Deep Link，用户点击跳转 TG Bot。  
 5. Bot 收到 `/start UID-...`，调用 `POST /api/bind` 绑定 `uid + chatId`。  
 6. Bot 引导用户上传初始化素材（至少 1 张照片 + 至少 10 秒语音）。  
