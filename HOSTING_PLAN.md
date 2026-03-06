@@ -1,5 +1,7 @@
 # Hosting 与采购清单
 
+English version: [HOSTING_PLAN.en.md](./HOSTING_PLAN.en.md)
+
 ## 1. MVP（2-4 周可上线）
 - 静态官网：Cloudflare Pages / Vercel
 - 控制面后端：1 台 2vCPU/4GB 云主机（或 Render/Fly.io）

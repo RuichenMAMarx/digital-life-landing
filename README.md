@@ -109,6 +109,12 @@ docker compose up --build
 - Bot token has appeared in chat history previously; rotate it before production.
 
 ## Additional Docs
-- [ARCHITECTURE.md](./ARCHITECTURE.md)
-- [HOSTING_PLAN.md](./HOSTING_PLAN.md)
-- [control-plane/README.md](./control-plane/README.md)
+- Architecture (ZH): [ARCHITECTURE.md](./ARCHITECTURE.md)
+- Architecture (EN): [ARCHITECTURE.en.md](./ARCHITECTURE.en.md)
+- Hosting Plan (ZH): [HOSTING_PLAN.md](./HOSTING_PLAN.md)
+- Hosting Plan (EN): [HOSTING_PLAN.en.md](./HOSTING_PLAN.en.md)
+- Control-plane (ZH): [control-plane/README.md](./control-plane/README.md)
+- Control-plane (EN): [control-plane/README.en.md](./control-plane/README.en.md)
+- PM Meeting Brief (ZH): [docs/MEETING_BRIEF.zh-CN.md](./docs/MEETING_BRIEF.zh-CN.md)
+- PM Meeting Brief (EN): [docs/MEETING_BRIEF.en.md](./docs/MEETING_BRIEF.en.md)
+- Bilingual Talk Track: [docs/BILINGUAL_TALK_TRACK.md](./docs/BILINGUAL_TALK_TRACK.md)

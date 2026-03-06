@@ -1,5 +1,7 @@
 # Digital Life 架构说明（UID 下单 + Bot 独立会话）
 
+English version: [ARCHITECTURE.en.md](./ARCHITECTURE.en.md)
+
 ## 1. 目标
 - 官网作为流量入口，所有体验都先创建唯一 `UID`。
 - 用户从官网一键跳转 Telegram bot，上交照片/语音。

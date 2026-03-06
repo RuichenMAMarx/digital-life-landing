@@ -1,5 +1,7 @@
 # Control Plane (UID 下单 + 会话分配)
 
+English version: [README.en.md](./README.en.md)
+
 控制面负责：
 - 官网 `UID` 下单与状态追踪
 - Telegram bot 的 UID 绑定与素材回传
