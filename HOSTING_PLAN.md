@@ -4,7 +4,7 @@
 - 静态官网：Cloudflare Pages / Vercel
 - 控制面后端：1 台 2vCPU/4GB 云主机（或 Render/Fly.io）
 - bot 服务：1 台 2vCPU/2GB（可和后端合并）
-- 数据库：PostgreSQL 1 实例（Supabase/Neon/RDS）
+- 数据库：PostgreSQL 1 实例（Supabase/Neon/RDS，控制面已支持 PG）
 - 对象存储：S3/R2（保存上传素材、生成素材）
 - 域名与 TLS：Cloudflare
 

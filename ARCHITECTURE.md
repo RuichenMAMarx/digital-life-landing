@@ -10,6 +10,7 @@
 - `index.html + script.js`: 官网前端，`POST /api/apply` 创建 UID。
 - `bot/server.js`: Telegram onboarding bot，采集素材并回调分配。
 - `control-plane/src/server.js`: 控制面后端（下单、绑定、分配、状态）。
+- `control-plane/src/storage/*`: 存储适配层（`json` / `postgres`）。
 
 ## 3. 核心流程
 1. 用户在官网提交表单 -> `control-plane /api/apply` 生成 UID。
@@ -39,7 +40,7 @@
 - 拆分条件：需要独立发布节奏、独立权限管理、独立 SLA。
 
 ## 7. 生产版建议（下一阶段）
-- 数据层：JSON -> PostgreSQL（主存储） + Redis（会话/锁/队列）。
+- 数据层：当前已支持 PostgreSQL；下一阶段可继续接 Redis（会话/锁/队列）。
 - 任务层：加入异步队列（BullMQ/SQS）处理素材审核、媒资生成、分配回调。
 - 可观测性：Sentry + Loki/ELK + Prometheus/Grafana。
 - 安全：

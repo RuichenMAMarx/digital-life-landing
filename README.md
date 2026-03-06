@@ -5,7 +5,7 @@ UID 驱动的官网 + Telegram onboarding bot + control-plane 后端。
 ## 目录
 - `index.html / script.js / style.css`：官网前端（GitHub Pages 可直接部署）
 - `bot/`：Telegram onboarding bot（收素材 + 回调分配）
-- `control-plane/`：UID 下单、状态管理、独立会话分配 API
+- `control-plane/`：UID 下单、状态管理、独立会话分配 API（支持 `json/postgres` 双存储）
 
 ## 本地联调
 1. 启动控制面
@@ -13,6 +13,13 @@ UID 驱动的官网 + Telegram onboarding bot + control-plane 后端。
 cd control-plane
 npm install
 cp .env.example .env
+npm start
+```
+
+若要使用 PostgreSQL：
+```bash
+cd control-plane
+npm run db:init
 npm start
 ```
 

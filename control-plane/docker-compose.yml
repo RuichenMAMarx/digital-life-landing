@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: digital-life-pg
+    environment:
+      POSTGRES_DB: digital_life
+      POSTGRES_USER: digital_life
+      POSTGRES_PASSWORD: digital_life
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  control-plane:
+    build: .
+    container_name: digital-life-control-plane
+    depends_on:
+      - postgres
+    command: sh -c "npm run db:init && npm start"
+    environment:
+      PORT: 8787
+      PUBLIC_BASE_URL: http://localhost:8787
+      TG_BOT_USERNAME: splandour_550w_bot
+      CONTROL_PLANE_KEY: replace-me
+      STORAGE_DRIVER: postgres
+      DATABASE_URL: postgresql://digital_life:digital_life@postgres:5432/digital_life
+      DATABASE_SSL: disable
+      CONTROL_PLANE_DATA_DIR: /app/data
+      CHANNEL_POOL_FILE: /app/data/channel-pool.example.json
+    ports:
+      - "8787:8787"
+
+volumes:
+  pgdata:
