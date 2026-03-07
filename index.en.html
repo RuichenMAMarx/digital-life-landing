@@ -12,10 +12,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .lang-switch {
-            position: absolute;
-            right: 5%;
-            top: 25px;
-            z-index: 200;
+            display: inline-flex;
+            align-items: center;
+            margin-left: 15px;
         }
 
         .lang-switch a {
@@ -45,11 +44,6 @@
 <body>
     <canvas id="particleCanvas"></canvas>
 
-    <div class="lang-switch">
-        <a href="index.html">中文</a>
-        <a href="index.en.html" class="active">EN</a>
-    </div>
-
     <nav class="navbar">
         <div class="logo">
             <span class="logo-icon"><i class="fa-solid fa-infinity"></i></span>
@@ -60,6 +54,10 @@
             <a href="#process">Process</a>
             <a href="#requirements">Requirements</a>
             <a href="#apply" class="nav-btn">Apply Now</a>
+            <div class="lang-switch">
+                <a href="index.html">中文</a>
+                <a href="index.en.html" class="active">EN</a>
+            </div>
         </div>
     </nav>
 
@@ -160,7 +158,8 @@
                     <h3><i class="fa-solid fa-sparkles"></i> Trial Experience Open</h3>
                     <p>Don't want to wait in a long queue? With just <strong>1 clear front-facing photo</strong> and
                         <strong>10 seconds of voice recording</strong>, you can generate a basic digital projection to
-                        experience the miracle of cross-boundary communication ahead of time.</p>
+                        experience the miracle of cross-boundary communication ahead of time.
+                    </p>
                 </div>
                 <a href="#apply" class="trial-btn">Apply for Free Trial</a>
             </div>
