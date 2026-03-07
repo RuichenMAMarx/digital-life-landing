@@ -118,7 +118,7 @@ const stripePaymentForm = document.getElementById('stripe-payment-form');
 const submitStripeBtn = document.getElementById('submitStripeBtn');
 
 // Initialize Stripe UI
-const stripe = Stripe('pk_live_51QvgmMAsnV5iHJdqw3FzVpEPVfndbmQXVPiwXAH1OztSC7s8m13YaRtvwXijrev91tDOBhtb3XNY2clhVHMBgFjl00MY4pxw8t');
+const stripe = Stripe('pk_test_YOUR_STRIPE_PUBLIC_KEY');
 const elements = stripe.elements();
 const cardElement = elements.create('card', {
     style: {
