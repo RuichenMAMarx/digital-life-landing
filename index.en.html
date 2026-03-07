@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Life Project - 550W</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Orbitron:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .lang-switch {
+            position: absolute;
+            right: 5%;
+            top: 25px;
+            z-index: 200;
+        }
+
+        .lang-switch a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .lang-switch a.active {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            background: rgba(0, 243, 255, 0.1);
+        }
+
+        .lang-switch a:hover {
+            color: var(--cyan);
+            border-color: var(--cyan);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="lang-switch">
+        <a href="index.html">中文</a>
+        <a href="index.en.html" class="active">EN</a>
+    </div>
+
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon"><i class="fa-solid fa-infinity"></i></span>
+            <span class="logo-text">DIGITAL <span class="highlight">LIFE</span></span>
+        </div>
+        <div class="menu">
+            <a href="#about">About</a>
+            <a href="#process">Process</a>
+            <a href="#requirements">Requirements</a>
+            <a href="#apply" class="nav-btn">Apply Now</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="glitch" data-text="Digital Life Project">Digital Life Project</h1>
+            <p class="subtitle">Give civilization to the years, give numbers to the life</p>
+            <div class="quote-box">
+                <p class="quote">"Dad, how do you solve this puzzle?"</p>
+                <p class="author">— Yaya, Iteration Version 871.4</p>
+            </div>
+            <a href="#apply" class="cta-btn">Initiate Upload</a>
+        </div>
+    </header>
+
+    <section id="about" class="section">
+        <h2 class="section-title">Beyond Physical Boundaries</h2>
+        <div class="cards-container">
+            <div class="glass-card fade-in">
+                <i class="fa-solid fa-brain card-icon"></i>
+                <h3>Consciousness Reconstruction</h3>
+                <p>Relying on the immense computational power of the 550W, we scan and transform a human lifetime into
+                    an indelible digital entity, existing endlessly in a cyberspace constructed by quantum computing.
+                </p>
+            </div>
+            <div class="glass-card fade-in" style="transition-delay: 0.2s;">
+                <i class="fa-solid fa-network-wired card-icon"></i>
+                <h3>Immortality in Information</h3>
+                <p>Not just a data backup, but a digital entity with self-awareness capable of continuous learning and
+                    growth. They continue to live within the code, an endless connection of longing.</p>
+            </div>
+            <div class="glass-card fade-in" style="transition-delay: 0.4s;">
+                <i class="fa-solid fa-shield-halved card-icon"></i>
+                <h3>Highest Privilege Isolation</h3>
+                <p>All digital lives are stored in an independent and encrypted quantum zone, safely isolated from the
+                    reality networks of human society to ensure the dignity and privacy of life.</p>
+            </div>
+            <div class="glass-card fade-in" style="transition-delay: 0.6s;">
+                <i class="fa-solid fa-comments card-icon"></i>
+                <h3>Cross-platform Communication</h3>
+                <p>Once awakened, the digital life can seamlessly integrate into your daily messaging apps (WeChat,
+                    Telegram, WhatsApp, etc.), allowing for natural voice conversations and sharing daily life anytime,
+                    anywhere just like before.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="process" class="section">
+        <h2 class="section-title">Transformation Process</h2>
+        <div class="timeline fade-in">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>01. Qualification & Scheduling</h3>
+                    <p>Due to precious computational resources (requiring the 550 series computers), each applicant must
+                        pay a deposit and enter a lengthy scheduling queue.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>02. Data Acquisition</h3>
+                    <p>Submit extensive multimedia materials including visual appearance, voice characteristics, and
+                        lifelong behavioral patterns to establish the initial behavior model and neural network
+                        architecture.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>03. Quantum Scan & Upload</h3>
+                    <p>Undergo deep brain mapping scans (if applicable) at designated facilities, which are then
+                        injected into the quantum computer along with pre-life data.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>04. Iteration & Awakening</h3>
+                    <p>The digital life undergoes tens of thousands of self-iterations in the virtual isolation zone
+                        until complete self-awareness emerges, followed by the first connection with family members.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="requirements" class="section">
+        <h2 class="section-title">Pre-conditions for Awakening</h2>
+        <div class="requirements-box glass-panel fade-in">
+            <div class="alert-box">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>Warning: Constructing a complete digital life requires massive amounts of source data support.
+                    Missing data could result in personality deviations or consciousness collapse.</p>
+            </div>
+
+            <div class="trial-banner">
+                <div class="trial-content">
+                    <h3><i class="fa-solid fa-sparkles"></i> Trial Experience Open</h3>
+                    <p>Don't want to wait in a long queue? With just <strong>1 clear front-facing photo</strong> and
+                        <strong>10 seconds of voice recording</strong>, you can generate a basic digital projection to
+                        experience the miracle of cross-boundary communication ahead of time.</p>
+                </div>
+                <a href="#apply" class="trial-btn">Apply for Free Trial</a>
+            </div>
+
+            <div class="req-grid">
+                <div class="req-item">
+                    <i class="fa-solid fa-image"></i>
+                    <h4>Multi-angle Imagery</h4>
+                    <p>At least 500 clear photographs featuring the subject's face and expressions, used for modeling
+                        and micro-expression training.</p>
+                </div>
+                <div class="req-item">
+                    <i class="fa-solid fa-video"></i>
+                    <h4>Life Videos</h4>
+                    <p>Over 10 hours of original raw video footage, primarily to capture subtle body movements and
+                        environmental interaction patterns.</p>
+                </div>
+                <div class="req-item">
+                    <i class="fa-solid fa-waveform-lines"></i>
+                    <h4>High-quality Audio</h4>
+                    <p>At least 2 hours of pure voice samples or conversational audio, used for voiceprint
+                        reconstruction and emotional expression training.</p>
+                </div>
+                <div class="req-item">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <h4>Texts & Memory Anchors</h4>
+                    <p>Diaries, letters, social media remnants, and "core memories" provided by family, essential for
+                        establishing initial parameters of the digital framework.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="apply" class="section">
+        <h2 class="section-title">Submit Upload Application</h2>
+        <p class="form-desc fade-in">Scheduling is extremely tight. By pre-paying a <strong>20% (1,500,000
+                Credits)</strong> deposit, you lock in the earliest available computational cycle.</p>
+
+        <form class="apply-form glass-panel fade-in" id="applyForm">
+            <div class="form-group plan-selection">
+                <label>Select Service Plan</label>
+                <div class="plan-cards">
+                    <label class="plan-card">
+                        <input type="radio" name="planType" value="trial" id="planTrial" checked>
+                        <div class="plan-content">
+                            <h4>Awakening Trial</h4>
+                            <p>1 Photo + 10s Voice</p>
+                            <span class="price">Free Trial</span>
+                        </div>
+                    </label>
+                    <label class="plan-card">
+                        <input type="radio" name="planType" value="full" id="planFull">
+                        <div class="plan-content">
+                            <h4>Full Digital Life</h4>
+                            <p>Massive Data Needed</p>
+                            <span class="price">Tight Schedule</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="applicant">Applicant (Family/Agent) Name</label>
+                <input type="text" id="applicant" required placeholder="Enter your name">
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Digital Life Subject Name</label>
+                <input type="text" id="subject" required placeholder="Enter the subject's name to be digitized">
+            </div>
+
+            <div class="form-group">
+                <label for="relation">Relation to Subject</label>
+                <select id="relation" required>
+                    <option value="" disabled selected>Please select</option>
+                    <option value="parent">Parent</option>
+                    <option value="child">Child</option>
+                    <option value="spouse">Spouse</option>
+                    <option value="other">Other Direct Relative</option>
+                </select>
+            </div>
+
+            <div class="form-group full-plan-only" id="dataCheckgroup" style="display: none;">
+                <label>Data Preparation Declaration (Commit to Provide on Time)</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="checkPhoto"> I confirm sufficient photo data collected
+                        (>=500)</label>
+                    <label><input type="checkbox" id="checkVideo"> I confirm sufficient video data collected
+                        (>=10H)</label>
+                    <label><input type="checkbox" id="checkAudio"> I confirm sufficient pure audio collected
+                        (>=2H)</label>
+                </div>
+            </div>
+
+            <div class="form-group trial-plan-only" id="trialCheckgroup">
+                <label>Data Preparation Progress</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="checkTrialData" required> I have prepared at least 1 clear
+                        front-facing photo and 10+ seconds of pure voice recording</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="message">What do you want to say to future them (As an awakening parameter)</label>
+                <textarea id="message" rows="4" placeholder="For example: Yaya, Daddy misses you very much..."
+                    required></textarea>
+            </div>
+
+            <div class="checkout-summary full-plan-only" id="checkoutSummary" style="display: none;">
+                <div class="summary-row">
+                    <span>Base Build Compute Fee</span>
+                    <span>5,000,000 Credits</span>
+                </div>
+                <div class="summary-row">
+                    <span>Independent Virtual Space (Standard 100 yr)</span>
+                    <span>2,500,000 Credits</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Deposit Due (20%)</span>
+                    <span>1,500,000 Credits</span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span class="btn-text" id="submitBtnText">Submit Basic Data & Start Experience</span>
+                <i class="fa-solid fa-fingerprint"></i>
+            </button>
+            <p class="terms">Submission signifies your agreement to the "Digital Life Ethics Act" and the non-negotiable
+                terms executed by 550 Series Computers. Once initiated, digital life cannot be forcibly terminated
+                without legal cause.</p>
+        </form>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">POWERED BY 550W</div>
+            <p>"Civilization without humanity is meaningless."</p>
+            <div class="footer-links">
+                <a href="#">UEG Government</a>
+                <a href="#">Ethics Committee Act</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <p class="copyright">&copy; 2058 Digital Life Project. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Modal: Payment Success / Schedule Entered / UID Confirmed -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-content glass-panel" style="max-width: 600px;">
+            <div class="modal-icon"><i class="fa-solid fa-microchip"></i></div>
+            <h2>Authorization Requested</h2>
+            <div
+                style="background: rgba(0, 243, 255, 0.05); border: 1px solid var(--cyan); padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="font-size: 0.9rem; color: var(--text-gray); margin-bottom: 5px;">Digital Life Unique
+                    Identifier (UID)</p>
+                <p><strong id="sequenceNumber" class="glitch"
+                        style="font-size: 1.8rem; letter-spacing: 2px;">UID-550W-XXXXX</strong></p>
+            </div>
+            <p class="modal-desc">Please complete the deposit to officially lock your 550W cycle.<br>Current compute
+                wait time: <span class="highlight">1.4 Years</span><br><br><small
+                    style="color: rgba(255,255,255,0.5);"><i class="fa-solid fa-lock"></i> Payment protected by
+                    enterprise-grade Stripe encryption</small></p>
+
+            <div id="stripe-payment-form" style="display: none; margin-top: 20px; text-align: left;">
+                <label style="color: var(--cyan); margin-bottom: 10px; display: block; font-size: 0.9rem;">Credit /
+                    Debit Card Authorization</label>
+                <div id="card-element"
+                    style="padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 4px;">
+                </div>
+                <div id="card-errors" role="alert"
+                    style="color: var(--warn-red); margin-top: 10px; font-size: 0.85rem;"></div>
+                <button id="submitStripeBtn" class="cta-btn m-top"
+                    style="width: 100%; justify-content: center; font-size: 1rem;"><i class="fa-brands fa-stripe"
+                        style="font-size: 1.5rem; margin-right: 5px;"></i> Secure Pay 1,500,000 Credits</button>
+            </div>
+
+            <button class="nav-btn" onclick="closeModal()"
+                style="display:block; margin: 15px auto 0; background:transparent; border:none; color:rgba(255,255,255,0.4)!important; text-decoration:underline; cursor:pointer;">Think
+                about it / Pay Later</button>
+        </div>
+    </div>
+
+    <!-- Stripe JS -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        window.DIGITAL_LIFE_CONFIG = Object.assign({
+            controlPlaneBaseUrl: '',
+            telegramBotUsername: 'splandour_550w_bot'
+        }, window.DIGITAL_LIFE_CONFIG || {});
+    </script>
+    <script src="script.en.js"></script>
+</body>
+
+</html>
