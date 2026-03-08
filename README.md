@@ -26,18 +26,23 @@ flowchart LR
 - `control-plane/`: UID 下单、状态管理、独立会话分配 API（`json/postgres` 双存储）
 
 ## Quick Start (Local)
+0. Use project Node runtime (recommended)
+```bash
+nvm install
+nvm use
+./scripts/npmw -v
+```
+
 1. Start control-plane
 ```bash
-cd control-plane
-npm install
+./scripts/npmw --prefix control-plane install
 cp .env.example .env
-npm start
+./scripts/npmw --prefix control-plane start
 ```
 
 2. Start bot
 ```bash
-cd bot
-npm install
+./scripts/npmw --prefix bot install
 cp .env.example .env
 # set TELEGRAM_BOT_TOKEN + CONTROL_PLANE_BASE_URL + CONTROL_PLANE_KEY
 node server.js
@@ -45,7 +50,8 @@ node server.js
 
 3. Start landing
 ```bash
-cd /Users/hongwen/.openclaw/workspace/digital-life-landing
+cp config.local.example.js config.local.js
+# Ensure you are at repository root
 python3 -m http.server 8080
 ```
 
