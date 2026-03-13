@@ -248,13 +248,9 @@
 
     <section id="apply" class="section">
         <h2 class="section-title">Submit Upload Application</h2>
-        <div class="modelscope-banner fade-in">
-            <i class="fa-solid fa-bolt"></i>
-            ModelScope demo release: package selection, WeChat/Alipay checkout, and auto-renew authorization capture
-        </div>
-        <p class="form-desc fade-in">Digital Life Card uses an on-demand generative pricing model.
-            <strong>Monthly: CNY 299 / month, Yearly: CNY 2,990 / year</strong> to unlock multi-modal text, video, and
-            voice companion features.
+        <p class="form-desc fade-in">Digital Life Card operates on an on-demand generative pricing model.
+            <strong>Subscribe for only $50.00 / month</strong> to unlock all multi-modal voice, video, and text
+            companion features.
         </p>
 
         <form class="apply-form glass-panel fade-in" id="applyForm">
@@ -334,70 +330,11 @@
                 </div>
                 <div class="summary-row">
                     <span>Multi-modal Communication Subscription</span>
-                    <span id="summaryPlanPrice">CNY 299.00 / Month</span>
-                </div>
-                <div class="summary-row">
-                    <span>Payment Method</span>
-                    <span id="summaryPaymentProvider">WeChat Pay</span>
-                </div>
-                <div class="summary-row">
-                    <span>Auto-renew Authorization</span>
-                    <span id="summaryAutoRenew">Off</span>
+                    <span>$50.00 / Month</span>
                 </div>
                 <div class="summary-row total">
                     <span>Total Due Today (1st Month)</span>
-                    <span id="summaryFirstAmount">CNY 299.00</span>
-                </div>
-            </div>
-
-            <div class="form-group full-plan-only" id="packageGroup" style="display: none;">
-                <label>Select Subscription Package</label>
-                <div class="plan-cards">
-                    <label class="plan-card">
-                        <input type="radio" name="billingPackage" value="monthly" id="packageMonthly" checked>
-                        <div class="plan-content">
-                            <h4>Monthly</h4>
-                            <p>Flexible monthly renewal</p>
-                            <span class="price">CNY 299 / month</span>
-                        </div>
-                    </label>
-                    <label class="plan-card">
-                        <input type="radio" name="billingPackage" value="yearly" id="packageYearly">
-                        <div class="plan-content">
-                            <h4>Yearly</h4>
-                            <p>Annual discount plan</p>
-                            <span class="price">CNY 2,990 / year</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <div class="form-group full-plan-only" id="paymentMethodGroup" style="display: none;">
-                <label>Payment Method</label>
-                <div class="plan-cards">
-                    <label class="plan-card">
-                        <input type="radio" name="paymentProvider" value="wechat" id="providerWechat" checked>
-                        <div class="plan-content">
-                            <h4><i class="fa-brands fa-weixin"></i> WeChat Pay</h4>
-                            <p>Recommended (H5 / QR)</p>
-                            <span class="price">Real-time settle</span>
-                        </div>
-                    </label>
-                    <label class="plan-card">
-                        <input type="radio" name="paymentProvider" value="alipay" id="providerAlipay">
-                        <div class="plan-content">
-                            <h4><i class="fa-brands fa-alipay"></i> Alipay</h4>
-                            <p>Optional (H5 / QR)</p>
-                            <span class="price">Real-time settle</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <div class="form-group full-plan-only" id="autoRenewGroup" style="display: none;">
-                <label>Auto-renew Authorization (Optional)</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" id="autoRenewAuthorized"> I agree to authorize WeChat/Alipay automatic renewal when merchant auto-deduct is formally enabled (authorization intent only in this phase).</label>
+                    <span>$50.00</span>
                 </div>
             </div>
 
@@ -436,34 +373,22 @@
                 <p><strong id="sequenceNumber" class="glitch"
                         style="font-size: 1.8rem; letter-spacing: 2px;">UID-550W-XXXXX</strong></p>
             </div>
-            <p class="modal-desc">Please complete first-cycle payment to officially lock your compute slot.<br>Current
-                queue estimate: <span class="highlight">1.4 Years</span></p>
+            <p class="modal-desc">Please complete the deposit to officially lock your 550W cycle.<br>Current compute
+                wait time: <span class="highlight">1.4 Years</span><br><br><small
+                    style="color: rgba(255,255,255,0.5);"><i class="fa-solid fa-lock"></i> Payment protected by
+                    enterprise-grade Stripe encryption</small></p>
 
-            <div id="paymentFlowPanel" style="display: none; margin-top: 20px; text-align: left;">
-                <div class="checkout-summary">
-                    <div class="summary-row">
-                        <span>Package</span>
-                        <span id="modalPlanName">Monthly</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Payment Method</span>
-                        <span id="modalPaymentProvider">WeChat Pay</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>Auto-renew Authorization</span>
-                        <span id="modalAutoRenew">Off</span>
-                    </div>
-                    <div class="summary-row total">
-                        <span>Amount Due</span>
-                        <span id="modalAmount">CNY 299.00</span>
-                    </div>
+            <div id="stripe-payment-form" style="display: none; margin-top: 20px; text-align: left;">
+                <label style="color: var(--cyan); margin-bottom: 10px; display: block; font-size: 0.9rem;">Credit /
+                    Debit Card Authorization</label>
+                <div id="card-element"
+                    style="padding: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 4px;">
                 </div>
-                <a id="openCheckoutBtn" class="cta-btn m-top" target="_blank" rel="noopener"
-                    style="display: none; width: 100%; justify-content: center; font-size: 1rem;">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Checkout
-                </a>
-                <div id="paymentMessage"
-                    style="margin-top: 10px; color: var(--text-gray); font-size: 0.9rem; line-height: 1.5;"></div>
+                <div id="card-errors" role="alert"
+                    style="color: var(--warn-red); margin-top: 10px; font-size: 0.85rem;"></div>
+                <button id="submitStripeBtn" class="cta-btn m-top"
+                    style="width: 100%; justify-content: center; font-size: 1rem;"><i class="fa-brands fa-stripe"
+                        style="font-size: 1.5rem; margin-right: 5px;"></i> Secure Pay $50.00</button>
             </div>
 
             <button class="nav-btn" onclick="closeModal()"
@@ -472,6 +397,8 @@
         </div>
     </div>
 
+    <!-- Stripe JS -->
+    <script src="https://js.stripe.com/v3/"></script>
     <script src="config.local.js"></script>
     <script>
         (function () {
@@ -479,8 +406,7 @@
             const defaultBaseUrl = localHosts.has(window.location.hostname) ? 'http://localhost:8787' : '';
             window.DIGITAL_LIFE_CONFIG = Object.assign({
                 controlPlaneBaseUrl: defaultBaseUrl,
-                telegramBotUsername: 'splandour_550w_bot',
-                publishTarget: 'modelscope'
+                telegramBotUsername: 'splandour_550w_bot'
             }, window.DIGITAL_LIFE_CONFIG || {});
         })();
     </script>

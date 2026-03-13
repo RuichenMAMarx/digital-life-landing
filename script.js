@@ -108,72 +108,90 @@ const observers = new IntersectionObserver((entries) => {
 document.querySelectorAll('.fade-in').forEach(el => observers.observe(el));
 
 
-// --- Form Submission & Modal (ModelScope + WeChat/Alipay Flow) ---
+// --- Form Submission & Modal (Stripe Integration Prep) ---
 const applyForm = document.getElementById('applyForm');
 const modal = document.getElementById('successModal');
 const submitBtn = document.getElementById('submitBtn');
 const getSubmitBtnText = () => document.getElementById('submitBtnText');
 const seqNumber = document.getElementById('sequenceNumber');
-const paymentFlowPanel = document.getElementById('paymentFlowPanel');
-const openCheckoutBtn = document.getElementById('openCheckoutBtn');
-const paymentMessage = document.getElementById('paymentMessage');
-const modalPlanName = document.getElementById('modalPlanName');
-const modalPaymentProvider = document.getElementById('modalPaymentProvider');
-const modalAutoRenew = document.getElementById('modalAutoRenew');
-const modalAmount = document.getElementById('modalAmount');
-const summaryPlanPrice = document.getElementById('summaryPlanPrice');
-const summaryPaymentProvider = document.getElementById('summaryPaymentProvider');
-const summaryAutoRenew = document.getElementById('summaryAutoRenew');
-const summaryFirstAmount = document.getElementById('summaryFirstAmount');
+const stripePaymentForm = document.getElementById('stripe-payment-form');
+const submitStripeBtn = document.getElementById('submitStripeBtn');
+
+// Initialize Stripe UI
+const stripe = Stripe('pk_test_YOUR_STRIPE_PUBLIC_KEY');
+const elements = stripe.elements();
+const cardElement = elements.create('card', {
+    style: {
+        base: {
+            color: '#ffffff',
+            fontFamily: '"Noto Sans SC", sans-serif',
+            fontSmoothing: 'antialiased',
+            fontSize: '16px',
+            iconColor: '#00f3ff',
+            '::placeholder': {
+                color: '#a0b0c0'
+            }
+        },
+        invalid: {
+            color: '#ff3333',
+            iconColor: '#ff3333'
+        }
+    }
+});
+cardElement.mount('#card-element');
+
+cardElement.on('change', function (event) {
+    const displayError = document.getElementById('card-errors');
+    if (event.error) {
+        displayError.textContent = event.error.message;
+    } else {
+        displayError.textContent = '';
+    }
+});
+
+if (submitStripeBtn) {
+    submitStripeBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        submitStripeBtn.disabled = true;
+        submitStripeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 加密通信连接中...';
+
+        // Simulate creating a payment token via Stripe.js (Safe to run without a backend)
+        const { token, error } = await stripe.createToken(cardElement);
+
+        if (error) {
+            const errorElement = document.getElementById('card-errors');
+            errorElement.textContent = error.message;
+            submitStripeBtn.disabled = false;
+            submitStripeBtn.innerHTML = '<i class="fa-brands fa-stripe" style="font-size: 1.5rem; margin-right: 5px;"></i> 安全支付 $50.00';
+        } else {
+            // Success Demo Effect
+            setTimeout(() => {
+                alert('支付授权成功！您刚刚生成了一个安全的 Stripe Token: ' + token.id + '。（注：由于此页面为纯前端 GitHub Pages，此交易处于演示模式，未产生实际收费。如需真实扣款需配合后端接口。）');
+                closeModal();
+                submitStripeBtn.disabled = false;
+                submitStripeBtn.innerHTML = '<i class="fa-brands fa-stripe" style="font-size: 1.5rem; margin-right: 5px;"></i> 安全支付 $50.00';
+                cardElement.clear();
+            }, 1000);
+        }
+    });
+}
+
 const planRadios = document.querySelectorAll('input[name="planType"]');
-const packageRadios = document.querySelectorAll('input[name="billingPackage"]');
-const paymentProviderRadios = document.querySelectorAll('input[name="paymentProvider"]');
-const autoRenewAuthorized = document.getElementById('autoRenewAuthorized');
 const trialCheckgroup = document.getElementById('trialCheckgroup');
 const dataCheckgroup = document.getElementById('dataCheckgroup');
 const checkoutSummary = document.getElementById('checkoutSummary');
-const packageGroup = document.getElementById('packageGroup');
-const paymentMethodGroup = document.getElementById('paymentMethodGroup');
-const autoRenewGroup = document.getElementById('autoRenewGroup');
 const checkPhoto = document.getElementById('checkPhoto');
 const checkVideo = document.getElementById('checkVideo');
 const checkAudio = document.getElementById('checkAudio');
 const checkTrialData = document.getElementById('checkTrialData');
 const modalTitle = modal.querySelector('h2');
 const modalDesc = modal.querySelector('.modal-desc');
-
-const BILLING_PACKAGES = {
-    monthly: {
-        key: 'monthly',
-        planId: 'amberify-monthly',
-        planType: 'monthly',
-        billingCycle: 'monthly',
-        displayName: '月度订阅',
-        amountCents: 29900,
-        currency: 'CNY'
-    },
-    yearly: {
-        key: 'yearly',
-        planId: 'amberify-yearly',
-        planType: 'yearly',
-        billingCycle: 'yearly',
-        displayName: '年度订阅',
-        amountCents: 299000,
-        currency: 'CNY'
-    }
-};
-
-const PAYMENT_PROVIDER_LABELS = {
-    wechat: '微信支付',
-    alipay: '支付宝'
-};
-
 let latestFullPlanContext = null;
+
 let currentPlan = 'trial';
 const PAGE_CONFIG = window.DIGITAL_LIFE_CONFIG || {};
 const CONTROL_PLANE_BASE_URL = String(PAGE_CONFIG.controlPlaneBaseUrl || '').trim().replace(/\/+$/, '');
 const TELEGRAM_BOT_USERNAME = String(PAGE_CONFIG.telegramBotUsername || 'splandour_550w_bot').trim();
-const PUBLISH_TARGET = String(PAGE_CONFIG.publishTarget || 'modelscope').trim() || 'modelscope';
 
 function generateFallbackUid() {
     const rand = Math.floor(100000 + Math.random() * 900000);
@@ -184,59 +202,43 @@ function defaultDeepLink(uid) {
     return `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${uid}`;
 }
 
-function toMoneyText(amountCents, currency = 'CNY') {
-    const n = Number(amountCents || 0) / 100;
-    const prefix = String(currency).toUpperCase() === 'CNY' ? '¥' : `${String(currency).toUpperCase()} `;
-    return `${prefix}${n.toFixed(2)}`;
-}
+async function submitApplyOrder() {
+    const payload = {
+        planType: currentPlan,
+        applicant: document.getElementById('applicant').value.trim(),
+        subject: document.getElementById('subject').value.trim(),
+        relation: document.getElementById('relation').value.trim(),
+        message: document.getElementById('message').value.trim(),
+        source: 'landing'
+    };
 
-function getSelectedRadioValue(name, fallback = '') {
-    const checked = document.querySelector(`input[name="${name}"]:checked`);
-    return checked ? checked.value : fallback;
-}
-
-function getSelectedPackage() {
-    const key = getSelectedRadioValue('billingPackage', 'monthly');
-    return BILLING_PACKAGES[key] || BILLING_PACKAGES.monthly;
-}
-
-function getSelectedPaymentProvider() {
-    const key = getSelectedRadioValue('paymentProvider', 'wechat');
-    return PAYMENT_PROVIDER_LABELS[key] ? key : 'wechat';
-}
-
-function updateCheckoutSummary() {
-    const pkg = getSelectedPackage();
-    const provider = getSelectedPaymentProvider();
-    const autoRenew = Boolean(autoRenewAuthorized && autoRenewAuthorized.checked);
-    if (summaryPlanPrice) {
-        summaryPlanPrice.textContent = `${toMoneyText(pkg.amountCents, pkg.currency)} / ${pkg.billingCycle === 'yearly' ? '年' : '月'}`;
+    if (!CONTROL_PLANE_BASE_URL) {
+        const uid = generateFallbackUid();
+        return {
+            uid,
+            telegramDeepLink: defaultDeepLink(uid),
+            fallback: true
+        };
     }
-    if (summaryFirstAmount) {
-        summaryFirstAmount.textContent = toMoneyText(pkg.amountCents, pkg.currency);
-    }
-    if (summaryPaymentProvider) {
-        summaryPaymentProvider.textContent = PAYMENT_PROVIDER_LABELS[provider] || provider;
-    }
-    if (summaryAutoRenew) {
-        summaryAutoRenew.textContent = autoRenew ? '已授权' : '未开启';
-    }
-}
 
-function setFullPlanVisibility(enabled) {
-    const display = enabled ? 'block' : 'none';
-    dataCheckgroup.style.display = display;
-    checkoutSummary.style.display = display;
-    packageGroup.style.display = display;
-    paymentMethodGroup.style.display = display;
-    autoRenewGroup.style.display = display;
-    trialCheckgroup.style.display = enabled ? 'none' : 'block';
-    getSubmitBtnText().textContent = enabled ? '提交并创建支付订单' : '提交基础数据并开启体验';
+    const res = await fetch(`${CONTROL_PLANE_BASE_URL}/api/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
 
-    checkPhoto.required = enabled;
-    checkVideo.required = enabled;
-    checkAudio.required = enabled;
-    checkTrialData.required = !enabled;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.uid) {
+        throw new Error(data.error || 'apply_failed');
+    }
+
+    return {
+        uid: data.uid,
+        telegramDeepLink: data.telegramDeepLink || defaultDeepLink(data.uid),
+        statusUrl: data.statusUrl || '',
+        paymentStatus: data.paymentStatus || '',
+        fallback: false
+    };
 }
 
 function normalizePaymentStatus(status) {
@@ -247,22 +249,15 @@ function normalizePaymentStatus(status) {
 
 function paymentStatusText(status) {
     const map = {
-        initiated: '支付创建中',
         pending: '待支付',
         paid: '已支付',
         waived: '已豁免',
         failed: '支付失败',
         refunded: '已退款',
         canceled: '已取消',
-        expired: '已过期',
         unknown: '未知'
     };
     return map[normalizePaymentStatus(status)] || status;
-}
-
-function canEnterIm(status) {
-    const normalized = normalizePaymentStatus(status);
-    return normalized === 'paid' || normalized === 'waived';
 }
 
 function upsertImDeepLinkButton(href, labelText) {
@@ -275,7 +270,7 @@ function upsertImDeepLinkButton(href, labelText) {
         imBtn.style.width = '100%';
         imBtn.style.justifyContent = 'center';
         imBtn.style.fontSize = '1.1rem';
-        paymentFlowPanel.parentNode.insertBefore(imBtn, paymentFlowPanel.nextSibling);
+        stripePaymentForm.parentNode.insertBefore(imBtn, stripePaymentForm.nextSibling);
     }
     imBtn.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 1.5rem; margin-right: 10px;"></i> ' + labelText;
     imBtn.href = href;
@@ -297,7 +292,7 @@ function ensureFullPlanStatusPanel() {
         panel.style.border = '1px solid var(--glass-border)';
         panel.style.background = 'rgba(0, 0, 0, 0.25)';
         panel.style.fontSize = '0.9rem';
-        paymentFlowPanel.parentNode.insertBefore(panel, paymentFlowPanel.nextSibling);
+        stripePaymentForm.parentNode.insertBefore(panel, stripePaymentForm.nextSibling);
     }
     return panel;
 }
@@ -305,117 +300,6 @@ function ensureFullPlanStatusPanel() {
 function removeFullPlanStatusPanel() {
     const panel = document.getElementById('fullPlanStatusPanel');
     if (panel) panel.remove();
-}
-
-function renderCheckoutFlow(context) {
-    if (!context) return;
-    if (modalPlanName) modalPlanName.textContent = context.packageName || '月度订阅';
-    if (modalPaymentProvider) modalPaymentProvider.textContent = PAYMENT_PROVIDER_LABELS[context.paymentProvider] || context.paymentProvider;
-    if (modalAutoRenew) modalAutoRenew.textContent = context.autoRenewAuthorized ? '已授权（待商户代扣开通）' : '未开启';
-    if (modalAmount) modalAmount.textContent = toMoneyText(context.amountCents, context.currency || 'CNY');
-
-    if (openCheckoutBtn) {
-        if (context.checkoutUrl) {
-            openCheckoutBtn.style.display = 'inline-flex';
-            openCheckoutBtn.href = context.checkoutUrl;
-            openCheckoutBtn.innerHTML = `<i class="fa-solid ${context.paymentProvider === 'alipay' ? 'fa-wallet' : 'fa-qrcode'}"></i> ${context.paymentProvider === 'alipay' ? '打开支付宝支付页' : '打开微信支付页'}`;
-        } else {
-            openCheckoutBtn.style.display = 'none';
-            openCheckoutBtn.removeAttribute('href');
-        }
-    }
-
-    if (paymentMessage) {
-        const statusText = paymentStatusText(context.paymentStatus);
-        paymentMessage.innerHTML = `当前支付状态：<strong>${statusText}</strong>${context.checkoutMessage ? `<br>${context.checkoutMessage}` : ''}`;
-    }
-}
-
-function buildBillingPayload() {
-    const pkg = getSelectedPackage();
-    const paymentProvider = getSelectedPaymentProvider();
-    const autoRenew = Boolean(autoRenewAuthorized && autoRenewAuthorized.checked);
-    return {
-        planId: pkg.planId,
-        planType: pkg.planType,
-        billingCycle: pkg.billingCycle,
-        amountCents: pkg.amountCents,
-        currency: pkg.currency,
-        paymentProvider,
-        channel: 'h5',
-        manualRenew: !autoRenew,
-        metadata: {
-            autoRenewAuthorized: autoRenew,
-            publishTarget: PUBLISH_TARGET
-        }
-    };
-}
-
-async function submitApplyOrder() {
-    const payload = {
-        planType: currentPlan,
-        applicant: document.getElementById('applicant').value.trim(),
-        subject: document.getElementById('subject').value.trim(),
-        relation: document.getElementById('relation').value.trim(),
-        message: document.getElementById('message').value.trim(),
-        source: `landing_${PUBLISH_TARGET}`
-    };
-
-    if (currentPlan === 'full') {
-        payload.billing = buildBillingPayload();
-    }
-
-    if (!CONTROL_PLANE_BASE_URL) {
-        const uid = generateFallbackUid();
-        const fallbackBilling = payload.billing ? {
-            ok: true,
-            checkout: {
-                mode: 'demo',
-                checkoutUrl: '',
-                message: '当前后端未连接，支付链路处于前端演示模式。'
-            },
-            payment: {
-                status: 'pending'
-            }
-        } : null;
-        return {
-            uid,
-            telegramDeepLink: defaultDeepLink(uid),
-            statusUrl: '',
-            paymentStatus: fallbackBilling ? 'pending' : '',
-            billing: fallbackBilling,
-            fallback: true
-        };
-    }
-
-    const res = await fetch(`${CONTROL_PLANE_BASE_URL}/api/apply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.uid) {
-        throw new Error(data.error || 'apply_failed');
-    }
-
-    return {
-        uid: data.uid,
-        telegramDeepLink: data.telegramDeepLink || defaultDeepLink(data.uid),
-        statusUrl: data.statusUrl || '',
-        paymentStatus: data.paymentStatus || '',
-        billing: data.billing || null,
-        fallback: false
-    };
-}
-
-function extractStatusFromSnapshot(snapshot, fallback = 'unknown') {
-    return normalizePaymentStatus(
-        snapshot?.payment?.status
-        || snapshot?.billingOrder?.status
-        || snapshot?.order?.paymentStatus
-        || fallback
-    );
 }
 
 async function refreshFullPlanPaymentState() {
@@ -433,23 +317,19 @@ async function refreshFullPlanPaymentState() {
         if (!res.ok) {
             throw new Error(data.error || 'status_query_failed');
         }
+        const paymentStatus = normalizePaymentStatus(data?.order?.paymentStatus || latestFullPlanContext.paymentStatus || 'unknown');
+        latestFullPlanContext.paymentStatus = paymentStatus;
 
-        latestFullPlanContext.paymentStatus = extractStatusFromSnapshot(data, latestFullPlanContext.paymentStatus);
-        if (!latestFullPlanContext.checkoutUrl) {
-            latestFullPlanContext.checkoutUrl = data?.payment?.checkoutUrl || latestFullPlanContext.checkoutUrl || '';
-        }
-        renderCheckoutFlow(latestFullPlanContext);
-
-        const canEnter = canEnterIm(latestFullPlanContext.paymentStatus);
+        const canEnterIm = paymentStatus === 'paid' || paymentStatus === 'waived';
         panel.innerHTML = `
-            <div><strong>订单状态：</strong>${paymentStatusText(latestFullPlanContext.paymentStatus)}</div>
+            <div><strong>订单状态：</strong>${paymentStatusText(paymentStatus)}</div>
             <div style="margin-top: 8px; opacity: 0.75;">UID：${latestFullPlanContext.uid}</div>
             <button id="refreshPaymentBtn" class="cta-btn m-top" style="width:100%; justify-content:center; font-size:0.95rem;">刷新支付状态</button>
         `;
         panel.querySelector('#refreshPaymentBtn').onclick = refreshFullPlanPaymentState;
 
-        if (canEnter) {
-            upsertImDeepLinkButton(latestFullPlanContext.telegramDeepLink, '支付完成，接入 Telegram 唤醒终端');
+        if (canEnterIm) {
+            upsertImDeepLinkButton(latestFullPlanContext.telegramDeepLink, '接入 Telegram 唤醒终端');
         } else {
             removeImDeepLinkButton();
         }
@@ -462,72 +342,64 @@ async function refreshFullPlanPaymentState() {
     }
 }
 
-function resetPlanUiToTrial() {
-    currentPlan = 'trial';
-    const trial = document.getElementById('planTrial');
-    if (trial) trial.checked = true;
-    setFullPlanVisibility(false);
-    if (autoRenewAuthorized) autoRenewAuthorized.checked = false;
-    updateCheckoutSummary();
-}
-
-planRadios.forEach((radio) => {
+// Handle plan change
+planRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
         currentPlan = e.target.value;
-        setFullPlanVisibility(currentPlan === 'full');
-        updateCheckoutSummary();
+        if (currentPlan === 'full') {
+            dataCheckgroup.style.display = 'block';
+            checkoutSummary.style.display = 'block';
+            trialCheckgroup.style.display = 'none';
+            getSubmitBtnText().textContent = '支付定金并生成排期密匙';
+
+            checkPhoto.required = true;
+            checkVideo.required = true;
+            checkAudio.required = true;
+            checkTrialData.required = false;
+        } else {
+            dataCheckgroup.style.display = 'none';
+            checkoutSummary.style.display = 'none';
+            trialCheckgroup.style.display = 'block';
+            getSubmitBtnText().textContent = '提交基础数据并开启体验';
+
+            checkPhoto.required = false;
+            checkVideo.required = false;
+            checkAudio.required = false;
+            checkTrialData.required = true;
+        }
     });
 });
 
-packageRadios.forEach((radio) => radio.addEventListener('change', updateCheckoutSummary));
-paymentProviderRadios.forEach((radio) => radio.addEventListener('change', updateCheckoutSummary));
-if (autoRenewAuthorized) autoRenewAuthorized.addEventListener('change', updateCheckoutSummary);
-
-setFullPlanVisibility(false);
-updateCheckoutSummary();
+// Removed dummy stripe payment link
 
 applyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // Animate button
     const originalText = getSubmitBtnText().textContent;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在创建申请与支付订单...';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 正在连接量子计算机...';
     submitBtn.style.opacity = '0.8';
     submitBtn.disabled = true;
 
     try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Keep a short animation even when backend responds very quickly
+        await new Promise(resolve => setTimeout(resolve, 800));
         const applyResult = await submitApplyOrder();
         const uid = applyResult.uid;
         seqNumber.textContent = uid;
-        seqNumber.setAttribute('data-text', uid);
+        seqNumber.setAttribute('data-text', uid); // For glitch effect
 
         if (currentPlan === 'full') {
-            const localBilling = buildBillingPayload();
-            const paymentStatus = normalizePaymentStatus(
-                applyResult?.billing?.payment?.status
-                || applyResult?.billing?.order?.status
-                || applyResult?.paymentStatus
-                || 'pending'
-            );
+            modalTitle.textContent = '算力排期请求已建立';
+            modalDesc.innerHTML = '请完成首月定金支付以正式激活您的数字生命卡。<br>系统将为您分配专属 550W 算力信道用于全模态模型生成与通讯应用集成。<br><br><small style="color: rgba(255,255,255,0.5);"><i class="fa-solid fa-lock"></i> 支付由 Stripe 提供企业级网络安全加密保障</small>';
+            stripePaymentForm.style.display = 'block';
+            removeImDeepLinkButton();
             latestFullPlanContext = {
                 uid,
                 statusUrl: applyResult.statusUrl || '',
-                paymentStatus,
-                telegramDeepLink: applyResult.telegramDeepLink || defaultDeepLink(uid),
-                paymentProvider: localBilling.paymentProvider,
-                packageName: getSelectedPackage().displayName,
-                amountCents: localBilling.amountCents,
-                currency: localBilling.currency,
-                autoRenewAuthorized: Boolean(autoRenewAuthorized && autoRenewAuthorized.checked),
-                checkoutUrl: applyResult?.billing?.checkout?.checkoutUrl || '',
-                checkoutMessage: applyResult?.billing?.checkout?.message || (applyResult.fallback ? '当前处于前端演示模式，未连接实际支付接口。' : '')
+                paymentStatus: normalizePaymentStatus(applyResult.paymentStatus || 'unknown'),
+                telegramDeepLink: applyResult.telegramDeepLink || defaultDeepLink(uid)
             };
-
-            modalTitle.textContent = '排期与支付订单已创建';
-            modalDesc.innerHTML = '请完成首期支付，系统将在确认后激活数字生命卡算力通道。<br><small style="color: rgba(255,255,255,0.6);">支持微信支付 / 支付宝；自动续费授权意向已记录。</small>';
-            paymentFlowPanel.style.display = 'block';
-            renderCheckoutFlow(latestFullPlanContext);
-            removeImDeepLinkButton();
-
             const panel = ensureFullPlanStatusPanel();
             panel.innerHTML = `
                 <div><strong>订单状态：</strong>${paymentStatusText(latestFullPlanContext.paymentStatus)}</div>
@@ -536,24 +408,28 @@ applyForm.addEventListener('submit', async (e) => {
             `;
             panel.querySelector('#refreshPaymentBtn').onclick = refreshFullPlanPaymentState;
             if (!latestFullPlanContext.statusUrl) {
-                panel.innerHTML += '<div style="margin-top: 8px; color: #ffad33;">后端状态查询不可用，请在接入 API 后重试。</div>';
+                panel.innerHTML += '<div style="margin-top: 8px; color: #ffad33;">当前为演示模式，后端状态查询不可用。</div>';
+            }
+            const canEnterImDirectly = latestFullPlanContext.paymentStatus === 'paid' || latestFullPlanContext.paymentStatus === 'waived';
+            if (canEnterImDirectly) {
+                upsertImDeepLinkButton(latestFullPlanContext.telegramDeepLink, '接入 Telegram 唤醒终端');
             }
 
-            if (canEnterIm(latestFullPlanContext.paymentStatus)) {
-                upsertImDeepLinkButton(latestFullPlanContext.telegramDeepLink, '支付完成，接入 Telegram 唤醒终端');
-            }
         } else {
             modalTitle.textContent = '体验生命基座已初始化';
             modalDesc.innerHTML = `新生命构建从确认专属 UID 开始。您的体验档案已挂载至虚拟空间。<br><br>
                 <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 4px; border-left: 3px solid var(--cyan); margin-top: 15px; font-size: 0.9rem;">
-                    <strong>[系统提示]</strong> 请通过专属通讯链路验证身份并提交素材。
+                    <strong>[系统提示]</strong> 拦截到 550W 初始化请求。请即刻通过专属通讯链路验证您的身份。<br>
+                    点击下方按钮进入加密终端，发送您的影像与声音特征。
                 </div>`;
-            paymentFlowPanel.style.display = 'none';
+            stripePaymentForm.style.display = 'none';
             removeFullPlanStatusPanel();
             latestFullPlanContext = null;
 
+            // Generate IM Deep Link Button (e.g., Telegram)
             const deepLinkUrl = applyResult.telegramDeepLink || defaultDeepLink(uid);
             upsertImDeepLinkButton(deepLinkUrl, '接入 Telegram 唤醒终端');
+
             if (applyResult.fallback) {
                 modalDesc.innerHTML += '<br><small style="color:#ffad33;"><i class="fa-solid fa-triangle-exclamation"></i> 当前后端不可用，已使用本地演示 UID。</small>';
             } else if (applyResult.statusUrl) {
@@ -561,13 +437,24 @@ applyForm.addEventListener('submit', async (e) => {
             }
         }
 
+        // Show Modal
         modal.classList.add('active');
         applyForm.reset();
-        resetPlanUiToTrial();
+
+        // Reset to default plan state
+        currentPlan = 'trial';
+        dataCheckgroup.style.display = 'none';
+        checkoutSummary.style.display = 'none';
+        trialCheckgroup.style.display = 'block';
+        checkPhoto.required = false;
+        checkVideo.required = false;
+        checkAudio.required = false;
+        checkTrialData.required = true;
     } catch (err) {
         console.error('submit apply order failed:', err);
         alert('提交失败：后端暂时不可用，请稍后重试。');
     } finally {
+        // Reset form btn
         submitBtn.innerHTML = `<span class="btn-text" id="submitBtnText">${originalText}</span><i class="fa-solid fa-fingerprint"></i>`;
         submitBtn.style.opacity = '1';
         submitBtn.disabled = false;
@@ -577,6 +464,5 @@ applyForm.addEventListener('submit', async (e) => {
 window.closeModal = () => {
     modal.classList.remove('active');
     removeFullPlanStatusPanel();
-    removeImDeepLinkButton();
     latestFullPlanContext = null;
 };
